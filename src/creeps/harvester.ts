@@ -6,8 +6,19 @@ interface HarvesterMemory {
 }
 
 export class HarvesterCreep<T> extends CreepWrapper<T & HarvesterMemory> {
-  public static spawn(room: string, spawn: string): void {
-    this.createCreep(room, spawn);
+  protected static role = Role.Harvester;
+  protected static parts: BodyPartConstant[] = [
+    WORK,
+    WORK,
+    CARRY,
+    CARRY,
+    CARRY,
+    MOVE,
+    MOVE
+  ];
+
+  public static spawn(room: string, spawn: string, harvestSource?: string): void {
+    this.createCreep(room, spawn, harvestSource ? { harvestSource } : {});
   }
 
   public currentStoredEnergy() {
@@ -19,9 +30,14 @@ export class HarvesterCreep<T> extends CreepWrapper<T & HarvesterMemory> {
   }
 
   public getClosestContainerEnergy(): AnyStructure | undefined {
-    const containers = this.creep.room.find<FIND_STRUCTURES, StructureContainer>(FIND_STRUCTURES, {
-      filter: structure => structure.structureType === STRUCTURE_CONTAINER && structure.store.energy > 0
-    })
+    const containers = this.creep.room.find<
+      FIND_STRUCTURES,
+      StructureContainer
+    >(FIND_STRUCTURES, {
+      filter: structure =>
+        structure.structureType === STRUCTURE_CONTAINER &&
+        structure.store.energy > 0
+    });
 
     return containers.reduce((a: StructureContainer | undefined, container) => {
       if (!a) {
@@ -39,21 +55,33 @@ export class HarvesterCreep<T> extends CreepWrapper<T & HarvesterMemory> {
   }
 
   public moveAndCollectEnergy(targetStructure: AnyStructure) {
-    if (this.creep.withdraw(targetStructure, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+    if (
+      this.creep.withdraw(targetStructure, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE
+    ) {
       this.creep.travelTo(targetStructure);
     }
   }
 
   public transferToStorage() {
-    const closestStorage = this.creep.pos.findClosestByPath(FIND_STRUCTURES, {
+    const closestSpawn = this.creep.pos.findClosestByPath(FIND_STRUCTURES, {
       filter: structure =>
         (structure.structureType === STRUCTURE_EXTENSION ||
-          structure.structureType === STRUCTURE_CONTAINER ||
-          structure.structureType === STRUCTURE_SPAWN ||
+          structure.structureType === STRUCTURE_SPAWN) &&
+        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+    });
+
+    const closestStorage = this.creep.pos.findClosestByPath(FIND_STRUCTURES, {
+      filter: structure =>
+        (structure.structureType === STRUCTURE_CONTAINER ||
           structure.structureType === STRUCTURE_TOWER) &&
         structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
     });
     if (
+      closestSpawn &&
+      this.creep.transfer(closestSpawn, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE
+    ) {
+      this.creep.travelTo(closestSpawn);
+    } else if (
       closestStorage &&
       this.creep.transfer(closestStorage, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE
     ) {

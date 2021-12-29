@@ -1,11 +1,11 @@
+import { runTower } from "buildings/tower";
 import { creepSpawner } from "creepHelper";
 import { BuilderCreep } from "creeps/builder";
 import { Role } from "creeps/creepWrapper";
 import { HarvesterCreep } from "creeps/harvester";
-import { builder } from "role.builder";
-import { upgrader } from "role.upgrader";
+import { UpgraderCreep } from "creeps/upgrader";
 import { ErrorMapper } from "utils/ErrorMapper";
-import 'utils/traveler';
+import "utils/traveler";
 
 declare global {
   /*
@@ -50,18 +50,24 @@ export const loop = ErrorMapper.wrapLoop(() => {
   }
 
   creepSpawner();
+  const towerId = "61cba8ca4b54e4004cb15463" as Id<StructureTower>;
+  const onlyTower = Game.getObjectById(towerId);
+  if (onlyTower) {
+    runTower(onlyTower);
+  }
 
   // Move harvesters to source and return to spawn
   for (const creepName in Game.creeps) {
     const creep = Game.creeps[creepName];
 
-    switch(creep.memory.role) {
+    switch (creep.memory.role) {
       case Role.Harvester:
         const harvester = new HarvesterCreep(creep);
         harvester.run();
         break;
       case Role.Upgrader:
-        upgrader.run(creep);
+        const upgrader = new UpgraderCreep(creep);
+        upgrader.run();
         break;
       case Role.Builder:
         const builder = new BuilderCreep(creep);

@@ -1,6 +1,7 @@
+import { BuilderCreep } from "creeps/builder";
 import { CreepWrapper, Role } from "creeps/creepWrapper";
 import { HarvesterCreep } from "creeps/harvester";
-import { builder } from "role.builder";
+import { UpgraderCreep } from "creeps/upgrader";
 
 export const spawnCreep = (targetSpawn: string, room: string, role: Role) => {
   const newName = `${role}-${Game.time}`;
@@ -15,9 +16,9 @@ export const spawnCreep = (targetSpawn: string, room: string, role: Role) => {
 };
 
 export const creepSpawner = () => {
-  const HARVESTER_COUNT = 2;
-  const BUILDER_COUNT = 10;
-  const UPGRADER_COUNT = 3;
+  const HARVESTER_COUNT = 6;
+  const BUILDER_COUNT = 5;
+  const UPGRADER_COUNT = 12;
 
   const harvesters = _.filter(
     Game.creeps,
@@ -35,9 +36,9 @@ export const creepSpawner = () => {
   if (harvesters.length <= HARVESTER_COUNT) {
     HarvesterCreep.spawn("W5N8", "Main");
   } else if (builders.length <= BUILDER_COUNT) {
-    spawnCreep("Main", "W5N8", Role.Builder);
+    BuilderCreep.spawn("W5N8", "Main");
   } else if (upgraders.length <= UPGRADER_COUNT) {
-    spawnCreep("Main", "W5N8", Role.Upgrader);
+    UpgraderCreep.spawn("W5N8", "Main");
   }
 
   const spawningCreep = CreepWrapper.getSpawningCreep("Main");

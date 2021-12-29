@@ -6,6 +6,9 @@ interface BuilderCreepMemory {
 }
 
 export class BuilderCreep extends HarvesterCreep<BuilderCreepMemory> {
+  protected static role = Role.Builder;
+  protected static parts: BodyPartConstant[] = [WORK, CARRY, CARRY, MOVE];
+
   public getClosestConstructionSite(): ConstructionSite<BuildableStructureConstant> | null {
     return this.creep.pos.findClosestByPath(FIND_CONSTRUCTION_SITES);
   }

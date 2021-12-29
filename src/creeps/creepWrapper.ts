@@ -9,7 +9,7 @@ export interface CreepFactory<T> {
 }
 
 export abstract class CreepWrapper<T> {
-  protected static role: Role = Role.Harvester;
+  protected static role: Role;
   protected static parts: BodyPartConstant[] = [WORK, CARRY, MOVE];
 
   public static nameCreep() {
