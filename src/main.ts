@@ -49,7 +49,7 @@ export const loop = ErrorMapper.wrapLoop(() => {
     }
   }
 
-  creepSpawner();
+  creepSpawner('W5N8', 'Main');
   const towerId = "61cba8ca4b54e4004cb15463" as Id<StructureTower>;
   const onlyTower = Game.getObjectById(towerId);
   if (onlyTower) {

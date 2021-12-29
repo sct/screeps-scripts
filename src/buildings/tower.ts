@@ -17,7 +17,8 @@ export const runTower = (tower: StructureTower) => {
 
   if (target) {
     tower.attack(target);
-  } else if (lowestHits) {
-    tower.repair(lowestHits);
   }
+  // else if (lowestHits) {
+  //   tower.repair(lowestHits);
+  // }
 };

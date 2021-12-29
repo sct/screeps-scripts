@@ -3,7 +3,7 @@ import { HarvesterCreep } from "./harvester";
 
 export class UpgraderCreep extends HarvesterCreep<{}> {
   protected static role = Role.Upgrader;
-  protected static parts: BodyPartConstant[] = [WORK, CARRY, MOVE];
+  protected static parts: BodyPartConstant[] = [WORK, WORK, CARRY, CARRY, MOVE];
 
   run() {
     if (this.working && this.creep.store[RESOURCE_ENERGY] == 0) {

@@ -3,6 +3,12 @@ import { CreepWrapper, Role } from "creeps/creepWrapper";
 import { HarvesterCreep } from "creeps/harvester";
 import { UpgraderCreep } from "creeps/upgrader";
 
+const creepWorkforce: Record<Role, number> = {
+  [Role.Harvester]: 10,
+  [Role.Builder]: 8,
+  [Role.Upgrader]: 12
+};
+
 export const spawnCreep = (targetSpawn: string, room: string, role: Role) => {
   const newName = `${role}-${Game.time}`;
 
@@ -15,31 +21,27 @@ export const spawnCreep = (targetSpawn: string, room: string, role: Role) => {
   }
 };
 
-export const creepSpawner = () => {
-  const HARVESTER_COUNT = 6;
-  const BUILDER_COUNT = 5;
-  const UPGRADER_COUNT = 12;
-
-  const harvesters = _.filter(
-    Game.creeps,
-    creep => creep.memory.role === "harvester"
-  );
-  const builders = _.filter(
-    Game.creeps,
-    creep => creep.memory.role === "builder"
-  );
-  const upgraders = _.filter(
-    Game.creeps,
-    creep => creep.memory.role === "upgrader"
-  );
-
-  if (harvesters.length <= HARVESTER_COUNT) {
-    HarvesterCreep.spawn("W5N8", "Main");
-  } else if (builders.length <= BUILDER_COUNT) {
-    BuilderCreep.spawn("W5N8", "Main");
-  } else if (upgraders.length <= UPGRADER_COUNT) {
-    UpgraderCreep.spawn("W5N8", "Main");
-  }
+export const creepSpawner = (room: string, spawner: string) => {
+  (Object.entries(creepWorkforce) as [Role, number][]).
+  filter(([role, count]) =>
+    _.filter(
+      Game.creeps,
+      creep => creep.memory.role === role
+    ).length < count
+  )
+  .forEach(([role]) => {
+    switch (role) {
+      case Role.Harvester:
+        HarvesterCreep.spawn(room, spawner);
+        break;
+      case Role.Builder:
+        BuilderCreep.spawn(room, spawner);
+        break;
+      case Role.Upgrader:
+        UpgraderCreep.spawn(room, spawner);
+        break;
+    }
+  })
 
   const spawningCreep = CreepWrapper.getSpawningCreep("Main");
 
