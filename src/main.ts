@@ -49,7 +49,16 @@ export const loop = ErrorMapper.wrapLoop(() => {
     }
   }
 
-  creepSpawner('W5N8', 'Main');
+  for (const roomName in Game.rooms) {
+    const room = Game.rooms[roomName];
+
+    const spawns = room.find(FIND_MY_SPAWNS);
+
+    spawns.forEach(spawn => {
+      creepSpawner(roomName, spawn.name);
+    });
+  }
+
   const towerId = "61cba8ca4b54e4004cb15463" as Id<StructureTower>;
   const onlyTower = Game.getObjectById(towerId);
   if (onlyTower) {

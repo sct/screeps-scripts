@@ -17,7 +17,11 @@ export class HarvesterCreep<T> extends CreepWrapper<T & HarvesterMemory> {
     MOVE
   ];
 
-  public static spawn(room: string, spawn: string, harvestSource?: string): void {
+  public static spawn(
+    room: string,
+    spawn: string,
+    harvestSource?: string
+  ): void {
     this.createCreep(room, spawn, harvestSource ? { harvestSource } : {});
   }
 
@@ -73,6 +77,7 @@ export class HarvesterCreep<T> extends CreepWrapper<T & HarvesterMemory> {
     const closestStorage = this.creep.pos.findClosestByPath(FIND_STRUCTURES, {
       filter: structure =>
         (structure.structureType === STRUCTURE_CONTAINER ||
+          structure.structureType === STRUCTURE_STORAGE ||
           structure.structureType === STRUCTURE_TOWER) &&
         structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
     });

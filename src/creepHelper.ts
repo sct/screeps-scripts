@@ -22,26 +22,25 @@ export const spawnCreep = (targetSpawn: string, room: string, role: Role) => {
 };
 
 export const creepSpawner = (room: string, spawner: string) => {
-  (Object.entries(creepWorkforce) as [Role, number][]).
-  filter(([role, count]) =>
-    _.filter(
-      Game.creeps,
-      creep => creep.memory.role === role
-    ).length < count
-  )
-  .forEach(([role]) => {
-    switch (role) {
-      case Role.Harvester:
-        HarvesterCreep.spawn(room, spawner);
-        break;
-      case Role.Builder:
-        BuilderCreep.spawn(room, spawner);
-        break;
-      case Role.Upgrader:
-        UpgraderCreep.spawn(room, spawner);
-        break;
-    }
-  })
+  (Object.entries(creepWorkforce) as [Role, number][])
+    .filter(
+      ([role, count]) =>
+        _.filter(Game.creeps, creep => creep.memory.role === role).length <
+        count
+    )
+    .forEach(([role]) => {
+      switch (role) {
+        case Role.Harvester:
+          HarvesterCreep.spawn(room, spawner);
+          break;
+        case Role.Builder:
+          BuilderCreep.spawn(room, spawner);
+          break;
+        case Role.Upgrader:
+          UpgraderCreep.spawn(room, spawner);
+          break;
+      }
+    });
 
   const spawningCreep = CreepWrapper.getSpawningCreep("Main");
 
