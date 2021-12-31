@@ -1,11 +1,13 @@
-import { runTower } from "buildings/tower";
-import { creepSpawner } from "creepHelper";
-import { BuilderCreep } from "creeps/builder";
-import { Role } from "creeps/creepWrapper";
-import { HarvesterCreep } from "creeps/harvester";
-import { UpgraderCreep } from "creeps/upgrader";
-import { ErrorMapper } from "utils/ErrorMapper";
-import "utils/traveler";
+/* eslint-disable @typescript-eslint/no-namespace */
+import { runTower } from 'buildings/tower';
+import { creepSpawner } from 'creepHelper';
+import { BuilderCreep } from 'creeps/builder';
+import { Role } from 'creeps/creepWrapper';
+import { HarvesterCreep } from 'creeps/harvester';
+import { UpgraderCreep } from 'creeps/upgrader';
+import { RoomDirector } from 'directors/roomDirector';
+import { ErrorMapper } from 'utils/ErrorMapper';
+import 'utils/traveler';
 
 declare global {
   /*
@@ -51,16 +53,19 @@ export const loop = ErrorMapper.wrapLoop(() => {
 
   for (const roomName in Game.rooms) {
     const room = Game.rooms[roomName];
+    const roomDirector = new RoomDirector(room);
+    roomDirector.run();
 
     const spawns = room.find(FIND_MY_SPAWNS);
 
-    spawns.forEach(spawn => {
+    spawns.forEach((spawn) => {
       creepSpawner(roomName, spawn.name);
     });
   }
 
-  const towerId = "61cba8ca4b54e4004cb15463" as Id<StructureTower>;
+  const towerId = '61cba8ca4b54e4004cb15463' as Id<StructureTower>;
   const onlyTower = Game.getObjectById(towerId);
+
   if (onlyTower) {
     runTower(onlyTower);
   }
@@ -70,18 +75,21 @@ export const loop = ErrorMapper.wrapLoop(() => {
     const creep = Game.creeps[creepName];
 
     switch (creep.memory.role) {
-      case Role.Harvester:
+      case Role.Harvester: {
         const harvester = new HarvesterCreep(creep);
         harvester.run();
         break;
-      case Role.Upgrader:
+      }
+      case Role.Upgrader: {
         const upgrader = new UpgraderCreep(creep);
         upgrader.run();
         break;
-      case Role.Builder:
+      }
+      case Role.Builder: {
         const builder = new BuilderCreep(creep);
         builder.run();
         break;
+      }
     }
   }
 });

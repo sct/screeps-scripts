@@ -1,4 +1,4 @@
-import { CreepFactory, CreepWrapper, Role } from "./creepWrapper";
+import { CreepWrapper, Role } from "./creepWrapper";
 
 interface HarvesterMemory {
   role: Role.Harvester;
@@ -25,11 +25,11 @@ export class HarvesterCreep<T> extends CreepWrapper<T & HarvesterMemory> {
     this.createCreep(room, spawn, harvestSource ? { harvestSource } : {});
   }
 
-  public currentStoredEnergy() {
+  public currentStoredEnergy(): number {
     return this.creep.store[RESOURCE_ENERGY];
   }
 
-  public getClosestSource() {
+  public getClosestSource(): Source  | null {
     return this.creep.pos.findClosestByPath(FIND_SOURCES);
   }
 
@@ -52,13 +52,13 @@ export class HarvesterCreep<T> extends CreepWrapper<T & HarvesterMemory> {
     }, undefined);
   }
 
-  public moveAndHarvest(source: Source | Mineral<MineralConstant> | Deposit) {
+  public moveAndHarvest(source: Source | Mineral<MineralConstant> | Deposit): void {
     if (this.creep.harvest(source) === ERR_NOT_IN_RANGE) {
       this.creep.travelTo(source);
     }
   }
 
-  public moveAndCollectEnergy(targetStructure: AnyStructure) {
+  public moveAndCollectEnergy(targetStructure: AnyStructure): void {
     if (
       this.creep.withdraw(targetStructure, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE
     ) {
@@ -66,7 +66,7 @@ export class HarvesterCreep<T> extends CreepWrapper<T & HarvesterMemory> {
     }
   }
 
-  public transferToStorage() {
+  public transferToStorage(): void {
     const closestSpawn = this.creep.pos.findClosestByPath(FIND_STRUCTURES, {
       filter: structure =>
         (structure.structureType === STRUCTURE_EXTENSION ||
@@ -83,18 +83,18 @@ export class HarvesterCreep<T> extends CreepWrapper<T & HarvesterMemory> {
     });
     if (
       closestSpawn &&
-      this.creep.transfer(closestSpawn, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE
+      this.creep.transfer(closestSpawn, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE
     ) {
       this.creep.travelTo(closestSpawn);
     } else if (
       closestStorage &&
-      this.creep.transfer(closestStorage, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE
+      this.creep.transfer(closestStorage, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE
     ) {
       this.creep.travelTo(closestStorage);
     }
   }
 
-  public run() {
+  public run(): void {
     if (this.memory.working && this.currentStoredEnergy() === 0) {
       this.memory.working = false;
       this.creep.say("🔄 harvest");

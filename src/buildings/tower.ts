@@ -1,4 +1,4 @@
-export const runTower = (tower: StructureTower) => {
+export const runTower = (tower: StructureTower): void => {
   const target = tower.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
   const repairables = tower.room.find(FIND_STRUCTURES, {
     filter: structure => structure.hits < structure.hitsMax

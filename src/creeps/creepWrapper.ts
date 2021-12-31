@@ -1,18 +1,17 @@
-export enum Role {
-  Upgrader = "upgrader",
-  Builder = "builder",
-  Harvester = "harvester"
-}
+import log from 'utils/logger';
 
-export interface CreepFactory<T> {
-  spawn(memory: T & CreepMemory): InstanceType<typeof CreepWrapper>;
+// eslint-disable-next-line no-shadow
+export enum Role {
+  Upgrader = 'upgrader',
+  Builder = 'builder',
+  Harvester = 'harvester',
 }
 
 export abstract class CreepWrapper<T> {
   protected static role: Role;
   protected static parts: BodyPartConstant[] = [WORK, CARRY, MOVE];
 
-  public static nameCreep() {
+  public static nameCreep(): string {
     return `${this.role}-${Game.time}`;
   }
 
@@ -20,17 +19,21 @@ export abstract class CreepWrapper<T> {
     room: string,
     targetSpawn: string,
     memory: Record<string, string | number> = {}
-  ) {
+  ): void {
     const newName = this.nameCreep();
-    if (Game.spawns[targetSpawn].spawnCreep(this.parts, newName, {
-      memory: {
-        role: this.role,
-        room: room,
-        working: false,
-        ...memory
-      }
-    }) == OK) {
-      console.log(`Spawning new ${this.role} named ${newName}`);
+    if (
+      Game.spawns[targetSpawn].spawnCreep(this.parts, newName, {
+        memory: {
+          role: this.role,
+          room,
+          working: false,
+          ...memory,
+        },
+      }) === OK
+    ) {
+      log.info(`Spawning new creep. Name: ${newName} Type: ${this.role}`, {
+        label: 'Creep Spawning',
+      });
     }
   }
 
@@ -46,19 +49,19 @@ export abstract class CreepWrapper<T> {
 
   protected creep: Creep;
 
-  constructor(creep: Creep) {
+  public constructor(creep: Creep) {
     this.creep = creep;
   }
 
-  get memory(): typeof this.creep.memory & T {
+  public get memory(): typeof this.creep.memory & T {
     return this.creep.memory as typeof this.creep.memory & T;
   }
 
-  get working(): boolean {
+  public get working(): boolean {
     return this.memory.working;
   }
 
-  set working(value: boolean) {
+  public set working(value: boolean) {
     this.memory.working = value;
   }
 }
