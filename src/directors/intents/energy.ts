@@ -2,6 +2,7 @@ import { TaskType } from 'tasks/task';
 import { Intent, IntentAction, IntentResponse } from './intent';
 
 export class EnergyIntent extends Intent {
+  protected intentKey = 'energy';
   public static ENERGY_EMERGENCY_THRESHOLD = 0.1;
 
   private getAssignedCreeps(): number {
@@ -64,6 +65,7 @@ export class EnergyIntent extends Intent {
         .filter(([, source]) => source.assignedCreeps > 0)
         .map(([sourceId, source]): IntentAction => {
           return {
+            id: this.getTaskKey(TaskType.Harvest, source.assignedCreeps, sourceId),
             taskType: TaskType.Harvest,
             targetId: sourceId,
             assignedCreeps: source.assignedCreeps,

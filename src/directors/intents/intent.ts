@@ -7,10 +7,11 @@ interface IntentSetup {
 }
 
 export interface IntentAction {
+  id: string;
   taskType: TaskType;
   assignedCreeps: number;
   creepType: CreepType;
-  targetId?: Id<AnyStructure | Source>;
+  targetId?: Id<AnyStructure | Source | ConstructionSite>;
 }
 
 export interface IntentResponse {
@@ -19,10 +20,15 @@ export interface IntentResponse {
 }
 
 export abstract class Intent {
+  protected abstract intentKey: string;
   protected roomDirector: RoomDirector;
 
   public constructor(setup: IntentSetup) {
     this.roomDirector = setup.roomDirector;
+  }
+
+  protected getTaskKey(taskType: TaskType, creeps: number, targetId = 'none'): string {
+    return `${this.intentKey}:${taskType}:${creeps}:${targetId.slice(0,5)}`;
   }
 
   public abstract run(): IntentResponse;

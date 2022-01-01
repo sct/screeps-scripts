@@ -1,15 +1,18 @@
+import { BuildTask } from 'tasks/build';
 import { HarvestTask } from 'tasks/harvest';
 import { TaskType } from 'tasks/task';
 import { UpgradeTask } from 'tasks/upgrade';
 import log from 'utils/logger';
 import { CreepDirector, CreepType } from './creepDirector';
+import { BuildIntent } from './intents/build';
 import { EnergyIntent } from './intents/energy';
 import { Intent, IntentAction } from './intents/intent';
 import { UpgradeIntent } from './intents/upgrade';
 
 interface ActiveTaskMemory {
+  taskKey: string;
   taskType: TaskType;
-  targetId?: Id<AnyStructure | Source>;
+  targetId?: Id<AnyStructure | Source | ConstructionSite>;
 }
 
 interface ActiveCreepMemory {
@@ -92,6 +95,9 @@ export class RoomDirector {
     const intents: Intent[] = [];
 
     switch (this.memory.rcl) {
+      case 2:
+        intents.push(new BuildIntent({ roomDirector: this }));
+      // eslint-disable-next-line no-fallthrough
       default:
         intents.push(
           new EnergyIntent({ roomDirector: this }),
@@ -141,9 +147,7 @@ export class RoomDirector {
   private assignCreeps(action: IntentAction) {
     // First get how many are already doing this task
     const working = Object.values(this.activeCreeps).filter(
-      (memory) =>
-        memory.activeTask?.taskType === action.taskType &&
-        memory.activeTask?.targetId === action.targetId
+      (memory) => memory.activeTask?.taskKey === action.id
     ).length;
 
     if (working < action.assignedCreeps) {
@@ -159,6 +163,7 @@ export class RoomDirector {
 
         if (unassignedCreep) {
           this.activeCreeps[unassignedCreep].activeTask = {
+            taskKey: action.id,
             taskType: action.taskType,
             targetId: action.targetId,
           };
@@ -223,22 +228,40 @@ export class RoomDirector {
         }
 
         switch (activeCreep.activeTask?.taskType) {
-          case TaskType.Harvest: {
-            const task = new HarvestTask(
+          case TaskType.Upgrade: {
+            const task = new UpgradeTask(creep);
+            task.run();
+            break;
+          }
+          case TaskType.Build: {
+            const task = new BuildTask(
               creep,
-              activeCreep.activeTask.targetId as Id<Source>
+              activeCreep.activeTask.targetId as Id<ConstructionSite>
             );
             task.run();
             break;
           }
-          case TaskType.Upgrade: {
-            const task = new UpgradeTask(creep);
+          case TaskType.Harvest:
+          default: {
+            const task = new HarvestTask(
+              creep,
+              activeCreep.activeTask?.targetId as Id<Source>
+            );
             task.run();
             break;
           }
         }
       });
 
-    // TODO: Add logic to clean up old tasks
+    // Clean up any creeps that no longer have an active intent
+    _.forEach(this.activeCreeps, (creepMemory) => {
+      if (
+        !this.memory.activeIntentActions.some(
+          (action) => creepMemory.activeTask?.taskKey === action.id
+        )
+      ) {
+        this.memory.activeCreeps[creepMemory.creepId].activeTask = null;
+      }
+    });
   }
 }

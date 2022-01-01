@@ -2,6 +2,8 @@ import { TaskType } from 'tasks/task';
 import { Intent, IntentAction, IntentResponse } from './intent';
 
 export class UpgradeIntent extends Intent {
+  protected intentKey = 'upgrade';
+
   private getAssignedCreeps(): number {
     switch (this.roomDirector.memory.rcl) {
       case 2:
@@ -15,6 +17,7 @@ export class UpgradeIntent extends Intent {
     const actions: IntentAction[] = [];
 
     actions.push({
+      id: this.getTaskKey(TaskType.Build, this.getAssignedCreeps(), this.roomDirector.memory.roomController),
       taskType: TaskType.Upgrade,
       targetId: this.roomDirector.memory.roomController,
       assignedCreeps: this.getAssignedCreeps(),
