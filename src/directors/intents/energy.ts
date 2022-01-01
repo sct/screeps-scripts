@@ -4,12 +4,18 @@ import { Intent, IntentAction, IntentResponse } from './intent';
 
 export class EnergyIntent extends Intent {
   public static ENERGY_EMERGENCY_THRESHOLD = 0.1;
-  private getPriority(): number {
+
+  private getAssignedCreeps(): number {
     const emergency =
       this.roomDirector.memory.availableSpawnEnergy /
         this.roomDirector.memory.spawnCapacity <
       EnergyIntent.ENERGY_EMERGENCY_THRESHOLD;
     switch (this.roomDirector.memory.rcl) {
+      case 2:
+        if (emergency) {
+          return 5;
+        }
+        return 3;
       default:
         if (emergency) {
           return 3;
@@ -31,7 +37,7 @@ export class EnergyIntent extends Intent {
       {} as { [sourceId: Id<Source>]: { assignedCreeps: number } }
     );
 
-    [...Array(this.getPriority()).keys()].forEach(() => {
+    [...Array(this.getAssignedCreeps()).keys()].forEach(() => {
       const leastAssignedSourceId = (
         Object.entries(availableSources) as [
           Id<Source>,
@@ -62,11 +68,12 @@ export class EnergyIntent extends Intent {
         ][]
       )
         .filter(([, source]) => source.assignedCreeps > 0)
-        .map(([sourceId, source]) => {
+        .map(([sourceId, source]): IntentAction => {
           return {
             taskType: TaskType.Harvest,
             targetId: sourceId,
             assignedCreeps: source.assignedCreeps,
+            creepType: 'drone',
           };
         })
     );

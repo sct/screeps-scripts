@@ -10,12 +10,52 @@ export abstract class Task<Target> {
   protected creep: Creep;
   protected targetId?: Id<Target>;
 
-  public constructor(
-    creep: Creep,
-    targetId?: Id<Target>
-  ) {
+  public constructor(creep: Creep, targetId?: Id<Target>) {
     this.creep = creep;
     this.targetId = targetId;
+  }
+
+  protected currentStoredEnergy(): number {
+    return this.creep.store[RESOURCE_ENERGY];
+  }
+
+  protected getClosestSource(): Source | null {
+    return this.creep.pos.findClosestByPath(FIND_SOURCES);
+  }
+
+  protected getClosestContainerEnergy(): AnyStructure | undefined {
+    const containers = this.creep.room.find<
+      FIND_STRUCTURES,
+      StructureContainer
+    >(FIND_STRUCTURES, {
+      filter: (structure) =>
+        structure.structureType === STRUCTURE_CONTAINER &&
+        structure.store.energy > 0,
+    });
+
+    return containers.reduce((a: StructureContainer | undefined, container) => {
+      if (!a) {
+        return container;
+      } else {
+        return a.store.energy > container.store.energy ? a : container;
+      }
+    }, undefined);
+  }
+
+  protected moveAndHarvest(
+    source: Source | Mineral<MineralConstant> | Deposit
+  ): void {
+    if (this.creep.harvest(source) === ERR_NOT_IN_RANGE) {
+      this.creep.travelTo(source);
+    }
+  }
+
+  protected moveAndCollectEnergy(targetStructure: AnyStructure): void {
+    if (
+      this.creep.withdraw(targetStructure, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE
+    ) {
+      this.creep.travelTo(targetStructure);
+    }
   }
 
   public abstract run(creep: Creep): void;

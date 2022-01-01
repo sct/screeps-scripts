@@ -1,9 +1,11 @@
-import { Role } from 'creeps/creepWrapper';
 import { HarvestTask } from 'tasks/harvest';
 import { TaskType } from 'tasks/task';
+import { UpgradeTask } from 'tasks/upgrade';
 import log from 'utils/logger';
+import { CreepDirector, CreepType } from './creepDirector';
 import { EnergyIntent } from './intents/energy';
-import { Intent } from './intents/intent';
+import { Intent, IntentAction } from './intents/intent';
+import { UpgradeIntent } from './intents/upgrade';
 
 interface ActiveTaskMemory {
   taskType: TaskType;
@@ -13,6 +15,7 @@ interface ActiveTaskMemory {
 interface ActiveCreepMemory {
   activeTask?: ActiveTaskMemory | null;
   creepId: Id<Creep>;
+  creepType: CreepType;
 }
 
 interface RoomDirectorMemory {
@@ -24,15 +27,20 @@ interface RoomDirectorMemory {
   spawns: Id<StructureSpawn>[];
   availableSources: Id<Source>[];
   rcl: number;
+  roomController?: Id<StructureController>;
+  activeIntentActions: IntentAction[];
 }
 
 export class RoomDirector {
-  protected room: Room;
+  public room: Room;
+  protected creepDirector: CreepDirector;
   protected intents: Intent[] = [];
 
   public constructor(room: Room) {
     this.room = room;
     this.initialize();
+    this.setIntents();
+    this.creepDirector = new CreepDirector(this);
   }
 
   public get memory(): RoomDirectorMemory {
@@ -46,13 +54,6 @@ export class RoomDirector {
   private initialize() {
     if ((this.memory.lastUpdate ?? 0) + 20 < Game.time) {
       log.debug(`Updating room memory: ${this.room.name} @ ${Game.time}`, {
-        label: 'Room Director',
-      });
-
-      const activeCreepsIds = Game.rooms[this.room.name]
-        .find(FIND_MY_CREEPS)
-        .map((creep) => creep.id);
-      log.debug(`Active creep count: ${activeCreepsIds.length}`, {
         label: 'Room Director',
       });
 
@@ -72,7 +73,7 @@ export class RoomDirector {
 
       this.memory = {
         lastUpdate: Game.time,
-        activeCreeps: this.updateCreepList(activeCreepsIds),
+        activeCreeps: this.updateCreepList(),
         availableSpawnEnergy,
         availableStoredEnergy,
         spawnCapacity,
@@ -81,6 +82,8 @@ export class RoomDirector {
           .find(FIND_SOURCES)
           .map((source) => source.id),
         rcl: this.room.controller?.level ?? 0,
+        roomController: this.room.controller?.id,
+        activeIntentActions: this.memory.activeIntentActions ?? [],
       };
     }
   }
@@ -90,21 +93,35 @@ export class RoomDirector {
 
     switch (this.memory.rcl) {
       default:
-        intents.push(new EnergyIntent({ roomDirector: this }));
+        intents.push(
+          new EnergyIntent({ roomDirector: this }),
+          new UpgradeIntent({ roomDirector: this })
+        );
     }
 
     this.intents = intents;
   }
 
-  private updateCreepList(creepIds: Id<Creep>[]) {
+  private updateCreepList() {
+    const activeCreeps = Game.rooms[this.room.name]
+      .find(FIND_MY_CREEPS)
+      .map((creep): { type: CreepType; id: Id<Creep> } => ({
+        type: creep.memory.type ?? 'drone',
+        id: creep.id,
+      }));
+    log.debug(`Active creep count: ${activeCreeps.length}`, {
+      label: 'Room Director',
+    });
+
     const currentCreeps = Object.assign(
       {},
-      creepIds.reduce<RoomDirectorMemory['activeCreeps']>(
-        (acc, creepId) => ({
+      (activeCreeps ?? []).reduce<RoomDirectorMemory['activeCreeps']>(
+        (acc, creep) => ({
           ...acc,
-          [creepId]: {
-            creepId,
+          [creep.id]: {
+            creepId: creep.id,
             activeTask: null,
+            creepType: creep.type,
           },
         }),
         {}
@@ -113,7 +130,7 @@ export class RoomDirector {
     );
 
     (Object.keys(currentCreeps) as Id<Creep>[]).forEach((id) => {
-      if (!creepIds.includes(id)) {
+      if (!activeCreeps.find((creep) => creep.id === id)) {
         delete currentCreeps[id];
       }
     });
@@ -121,56 +138,41 @@ export class RoomDirector {
     return currentCreeps;
   }
 
-  private assignCreeps(
-    taskType: TaskType,
-    creepsToAssign: number,
-    targetId?: Id<AnyStructure | Source>
-  ) {
+  private assignCreeps(action: IntentAction) {
     // First get how many are already doing this task
     const working = Object.values(this.activeCreeps).filter(
       (memory) =>
-        memory.activeTask?.taskType === taskType &&
-        memory.activeTask?.targetId === targetId
+        memory.activeTask?.taskType === action.taskType &&
+        memory.activeTask?.targetId === action.targetId
     ).length;
 
     log.debug('Current working creeps', { working });
 
-    if (working < creepsToAssign) {
-      const difference = creepsToAssign - working;
+    if (working < action.assignedCreeps) {
+      const difference = action.assignedCreeps - working;
       let left = difference;
 
       log.debug('Difference', { difference });
 
       [...Array(difference).keys()].forEach(() => {
         const unassignedCreep = Object.values(this.activeCreeps).find(
-          (activeCreepMemory) => !activeCreepMemory.activeTask
+          (activeCreepMemory) =>
+            !activeCreepMemory.activeTask &&
+            activeCreepMemory.creepType === action.creepType
         )?.creepId;
 
         if (unassignedCreep) {
           this.activeCreeps[unassignedCreep].activeTask = {
-            taskType,
-            targetId,
+            taskType: action.taskType,
+            targetId: action.targetId,
           };
           left -= 1;
         }
 
         if (left) {
           const spawn = Game.getObjectById(this.spawns[0]);
-          const creepName = `drone-${Game.time}`;
-
-          if (
-            spawn &&
-            spawn.spawnCreep([WORK, MOVE, CARRY], creepName, {
-              memory: {
-                role: Role.Harvester,
-                room: this.room.name,
-                working: false,
-              },
-            }) === OK
-          ) {
-            log.info(`Spawning new creep. Name: ${creepName}`, {
-              label: 'Creep Spawning',
-            });
+          if (spawn && !spawn.spawning) {
+            this.creepDirector.spawnCreep(spawn, action.creepType);
           }
         }
       });
@@ -203,21 +205,17 @@ export class RoomDirector {
   }
 
   public run(): void {
-    // Must call first to sync intents we want to use
-    this.setIntents();
-
+    const activeIntentActions: IntentAction[] = [];
     this.intents.forEach((intent) => {
       const response = intent.run();
       if (response.shouldAct) {
         response.actions.forEach((action) => {
-          this.assignCreeps(
-            action.taskType,
-            action.assignedCreeps,
-            action.targetId
-          );
+          activeIntentActions.push(action);
+          this.assignCreeps(action);
         });
       }
     });
+    this.memory.activeIntentActions = activeIntentActions;
 
     Object.values(this.activeCreeps)
       .filter((creep) => creep.activeTask)
@@ -235,8 +233,16 @@ export class RoomDirector {
               activeCreep.activeTask.targetId as Id<Source>
             );
             task.run();
+            break;
+          }
+          case TaskType.Upgrade: {
+            const task = new UpgradeTask(creep);
+            task.run();
+            break;
           }
         }
       });
+
+    // TODO: Add logic to clean up old tasks
   }
 }
