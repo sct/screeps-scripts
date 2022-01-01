@@ -128,12 +128,18 @@ export class RoomDirector {
   ) {
     // First get how many are already doing this task
     const working = Object.values(this.activeCreeps).filter(
-      (memory) => memory.activeTask?.taskType === taskType
+      (memory) =>
+        memory.activeTask?.taskType === taskType &&
+        memory.activeTask?.targetId === targetId
     ).length;
+
+    log.debug('Current working creeps', { working });
 
     if (working < creepsToAssign) {
       const difference = creepsToAssign - working;
       let left = difference;
+
+      log.debug('Difference', { difference });
 
       [...Array(difference).keys()].forEach(() => {
         const unassignedCreep = Object.values(this.activeCreeps).find(

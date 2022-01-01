@@ -12,9 +12,9 @@ export class EnergyIntent extends Intent {
     switch (this.roomDirector.memory.rcl) {
       default:
         if (emergency) {
-          return 2;
+          return 3;
         }
-        return 1;
+        return 2;
     }
   }
 
@@ -45,9 +45,14 @@ export class EnergyIntent extends Intent {
         }
         return accSourceId;
       }, Object.keys(availableSources)[0] as Id<Source>);
+      log.debug('Least Assigned Source ID', {
+        sourceId: leastAssignedSourceId,
+      });
 
       availableSources[leastAssignedSourceId].assignedCreeps += 1;
     });
+
+    log.debug('Available Sources', { availableSources });
 
     actions.push(
       ...(
@@ -55,16 +60,16 @@ export class EnergyIntent extends Intent {
           Id<Source>,
           { assignedCreeps: number }
         ][]
-      ).map(([sourceId, source]) => {
-        return {
-          taskType: TaskType.Harvest,
-          targetId: sourceId,
-          assignedCreeps: source.assignedCreeps,
-        };
-      })
+      )
+        .filter(([, source]) => source.assignedCreeps > 0)
+        .map(([sourceId, source]) => {
+          return {
+            taskType: TaskType.Harvest,
+            targetId: sourceId,
+            assignedCreeps: source.assignedCreeps,
+          };
+        })
     );
-
-    log.debug('Actions', { actions });
 
     return {
       actions,
