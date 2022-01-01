@@ -1,3 +1,4 @@
+import { HarvestTask } from 'tasks/harvest';
 import { TaskType } from 'tasks/task';
 import log from 'utils/logger';
 
@@ -73,7 +74,6 @@ export class RoomDirector {
   private updateCreepList(creepIds: Id<Creep>[]) {
     const currentCreeps = Object.assign(
       {},
-      this.memory.activeCreeps ?? {},
       creepIds.reduce<RoomDirectorMemory['activeCreeps']>(
         (acc, creepId) => ({
           ...acc,
@@ -82,7 +82,8 @@ export class RoomDirector {
           },
         }),
         {}
-      )
+      ),
+      this.memory.activeCreeps ?? {},
     );
 
     (Object.keys(currentCreeps) as Id<Creep>[]).forEach((id) => {
@@ -108,6 +109,30 @@ export class RoomDirector {
   }
 
   public run(): void {
-    // Evaluate stored energy and determine if we need to harvest more
+    (
+      Object.entries(this.memory.activeCreeps) as [
+        Id<Creep>,
+        ActiveCreepMemory
+      ][]
+    ).forEach(([creepId, creepMemory]) => {
+      const creep = Game.getObjectById(creepId);
+      if (!creep) {
+        return;
+      }
+
+      if (creepMemory.activeTask) {
+        switch (creepMemory.activeTask) {
+          case TaskType.Harvest: {
+            const task = new HarvestTask(creep);
+            task.run();
+            break;
+          }
+          default:
+          // do nothing
+        }
+      } else {
+        this.memory.activeCreeps[creepId].activeTask = TaskType.Harvest;
+      }
+    });
   }
 }

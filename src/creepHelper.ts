@@ -9,19 +9,19 @@ const creepWorkforce: Record<Role, number> = {
   [Role.Upgrader]: 12
 };
 
-export const spawnCreep = (targetSpawn: string, room: string, role: Role) => {
+export const spawnCreep = (targetSpawn: string, room: string, role: Role): void => {
   const newName = `${role}-${Game.time}`;
 
   if (
     Game.spawns[targetSpawn].spawnCreep([WORK, CARRY, MOVE], newName, {
       memory: { role, room, working: false }
-    }) == OK
+    }) === OK
   ) {
     console.log(`Spawning new ${role} named ${newName}`);
   }
 };
 
-export const creepSpawner = (room: string, spawner: string) => {
+export const creepSpawner = (room: string, spawner: string): void => {
   (Object.entries(creepWorkforce) as [Role, number][])
     .filter(
       ([role, count]) =>
@@ -45,10 +45,10 @@ export const creepSpawner = (room: string, spawner: string) => {
   const spawningCreep = CreepWrapper.getSpawningCreep("Main");
 
   if (spawningCreep) {
-    Game.spawns["Main"].room.visual.text(
+    Game.spawns.Main.room.visual.text(
       "🛠️" + spawningCreep.memory.role,
-      Game.spawns["Main"].pos.x + 1,
-      Game.spawns["Main"].pos.y,
+      Game.spawns.Main.pos.x + 1,
+      Game.spawns.Main.pos.y,
       { align: "left", opacity: 0.8 }
     );
   }

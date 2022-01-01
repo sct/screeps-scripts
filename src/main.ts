@@ -54,7 +54,7 @@ export const loop = ErrorMapper.wrapLoop(() => {
   for (const roomName in Game.rooms) {
     const room = Game.rooms[roomName];
     const roomDirector = new RoomDirector(room);
-    roomDirector.run();
+    // roomDirector.run();
 
     const spawns = room.find(FIND_MY_SPAWNS);
 
