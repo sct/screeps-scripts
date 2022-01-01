@@ -1,15 +1,17 @@
-import { Task } from "./task";
+import { Task, TaskType } from './task';
 
-export class HarvestTask extends Task {
-  public constructor(creep: Creep) {
-    super(creep);
+export class HarvestTask extends Task<Source> {
+  public taskType = TaskType.Harvest;
+
+  public constructor(creep: Creep, targetId?: Id<Source>) {
+    super(creep, targetId);
   }
 
   public currentStoredEnergy(): number {
     return this.creep.store[RESOURCE_ENERGY];
   }
 
-  public getClosestSource(): Source  | null {
+  public getClosestSource(): Source | null {
     return this.creep.pos.findClosestByPath(FIND_SOURCES);
   }
 
@@ -18,9 +20,9 @@ export class HarvestTask extends Task {
       FIND_STRUCTURES,
       StructureContainer
     >(FIND_STRUCTURES, {
-      filter: structure =>
+      filter: (structure) =>
         structure.structureType === STRUCTURE_CONTAINER &&
-        structure.store.energy > 0
+        structure.store.energy > 0,
     });
 
     return containers.reduce((a: StructureContainer | undefined, container) => {
@@ -32,7 +34,9 @@ export class HarvestTask extends Task {
     }, undefined);
   }
 
-  public moveAndHarvest(source: Source | Mineral<MineralConstant> | Deposit): void {
+  public moveAndHarvest(
+    source: Source | Mineral<MineralConstant> | Deposit
+  ): void {
     if (this.creep.harvest(source) === ERR_NOT_IN_RANGE) {
       this.creep.travelTo(source);
     }
@@ -48,18 +52,18 @@ export class HarvestTask extends Task {
 
   public transferToStorage(): void {
     const closestSpawn = this.creep.pos.findClosestByPath(FIND_STRUCTURES, {
-      filter: structure =>
+      filter: (structure) =>
         (structure.structureType === STRUCTURE_EXTENSION ||
           structure.structureType === STRUCTURE_SPAWN) &&
-        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0,
     });
 
     const closestStorage = this.creep.pos.findClosestByPath(FIND_STRUCTURES, {
-      filter: structure =>
+      filter: (structure) =>
         (structure.structureType === STRUCTURE_CONTAINER ||
           structure.structureType === STRUCTURE_STORAGE ||
           structure.structureType === STRUCTURE_TOWER) &&
-        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0
+        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0,
     });
     if (
       closestSpawn &&
@@ -77,21 +81,26 @@ export class HarvestTask extends Task {
   public run(): void {
     if (this.creep.memory.working && this.currentStoredEnergy() === 0) {
       this.creep.memory.working = false;
-      this.creep.say("🔄 harvest");
+      this.creep.say('🔄 harvest');
     }
 
-    if (!this.creep.memory.working && this.creep.store.getFreeCapacity() === 0) {
+    if (
+      !this.creep.memory.working &&
+      this.creep.store.getFreeCapacity() === 0
+    ) {
       this.creep.memory.working = true;
-      this.creep.say("📦 storing energy");
+      this.creep.say('📦 storing energy');
     }
 
     if (this.creep.memory.working) {
       this.transferToStorage();
     } else {
-      const closestSource = this.getClosestSource();
+      const targetSource = this.targetId
+        ? Game.getObjectById(this.targetId)
+        : this.getClosestSource();
 
-      if (closestSource) {
-        this.moveAndHarvest(closestSource);
+      if (targetSource) {
+        this.moveAndHarvest(targetSource);
       }
     }
   }

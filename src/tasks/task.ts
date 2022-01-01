@@ -5,11 +5,18 @@ export enum TaskType {
   Upgrade,
 }
 
-export abstract class Task {
+export abstract class Task<Target> {
+  public abstract taskType: TaskType;
   protected creep: Creep;
+  protected targetId?: Id<Target>;
 
-  public constructor(creep: Creep) {
+  public constructor(
+    creep: Creep,
+    targetId?: Id<Target>
+  ) {
     this.creep = creep;
+    this.targetId = targetId;
   }
+
   public abstract run(creep: Creep): void;
 }

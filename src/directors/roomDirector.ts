@@ -1,10 +1,18 @@
+import { Role } from 'creeps/creepWrapper';
 import { HarvestTask } from 'tasks/harvest';
 import { TaskType } from 'tasks/task';
 import log from 'utils/logger';
+import { EnergyIntent } from './intents/energy';
+import { Intent } from './intents/intent';
+
+interface ActiveTaskMemory {
+  taskType: TaskType;
+  targetId?: Id<AnyStructure | Source>;
+}
 
 interface ActiveCreepMemory {
-  activeTask?: TaskType | null;
-  targetId?: Id<Structure>;
+  activeTask?: ActiveTaskMemory | null;
+  creepId: Id<Creep>;
 }
 
 interface RoomDirectorMemory {
@@ -13,20 +21,21 @@ interface RoomDirectorMemory {
   availableSpawnEnergy: number;
   availableStoredEnergy: number;
   spawnCapacity: number;
+  spawns: Id<StructureSpawn>[];
+  availableSources: Id<Source>[];
+  rcl: number;
 }
 
 export class RoomDirector {
-  private static ENERGY_HARVEST_THRESHOLD = 0.5;
-  private static ENERGY_EMERGENCY_THRESHOLD = 0.25;
-
   protected room: Room;
+  protected intents: Intent[] = [];
 
   public constructor(room: Room) {
     this.room = room;
     this.initialize();
   }
 
-  private get memory(): RoomDirectorMemory {
+  public get memory(): RoomDirectorMemory {
     return this.room.memory as RoomDirectorMemory;
   }
 
@@ -67,8 +76,24 @@ export class RoomDirector {
         availableSpawnEnergy,
         availableStoredEnergy,
         spawnCapacity,
+        spawns: this.room.find(FIND_MY_SPAWNS).map((spawn) => spawn.id),
+        availableSources: this.room
+          .find(FIND_SOURCES)
+          .map((source) => source.id),
+        rcl: this.room.controller?.level ?? 0,
       };
     }
+  }
+
+  private setIntents(): void {
+    const intents: Intent[] = [];
+
+    switch (this.memory.rcl) {
+      default:
+        intents.push(new EnergyIntent({ roomDirector: this }));
+    }
+
+    this.intents = intents;
   }
 
   private updateCreepList(creepIds: Id<Creep>[]) {
@@ -78,12 +103,13 @@ export class RoomDirector {
         (acc, creepId) => ({
           ...acc,
           [creepId]: {
+            creepId,
             activeTask: null,
           },
         }),
         {}
       ),
-      this.memory.activeCreeps ?? {},
+      this.memory.activeCreeps ?? {}
     );
 
     (Object.keys(currentCreeps) as Id<Creep>[]).forEach((id) => {
@@ -93,6 +119,56 @@ export class RoomDirector {
     });
 
     return currentCreeps;
+  }
+
+  private assignCreeps(
+    taskType: TaskType,
+    creepsToAssign: number,
+    targetId?: Id<AnyStructure | Source>
+  ) {
+    // First get how many are already doing this task
+    const working = Object.values(this.activeCreeps).filter(
+      (memory) => memory.activeTask?.taskType === taskType
+    ).length;
+
+    if (working < creepsToAssign) {
+      const difference = creepsToAssign - working;
+      let left = difference;
+
+      [...Array(difference).keys()].forEach(() => {
+        const unassignedCreep = Object.values(this.activeCreeps).find(
+          (activeCreepMemory) => !activeCreepMemory.activeTask
+        )?.creepId;
+
+        if (unassignedCreep) {
+          this.activeCreeps[unassignedCreep].activeTask = {
+            taskType,
+            targetId,
+          };
+          left -= 1;
+        }
+
+        if (left) {
+          const spawn = Game.getObjectById(this.spawns[0]);
+          const creepName = `drone-${Game.time}`;
+
+          if (
+            spawn &&
+            spawn.spawnCreep([WORK, MOVE, CARRY], creepName, {
+              memory: {
+                role: Role.Harvester,
+                room: this.room.name,
+                working: false,
+              },
+            }) === OK
+          ) {
+            log.info(`Spawning new creep. Name: ${creepName}`, {
+              label: 'Creep Spawning',
+            });
+          }
+        }
+      });
+    }
   }
 
   public getAvailableStoredEnergy(): number {
@@ -108,31 +184,53 @@ export class RoomDirector {
     return storageUnits.reduce((acc, unit) => acc + unit.store.energy, 0);
   }
 
-  public run(): void {
-    (
-      Object.entries(this.memory.activeCreeps) as [
-        Id<Creep>,
-        ActiveCreepMemory
-      ][]
-    ).forEach(([creepId, creepMemory]) => {
-      const creep = Game.getObjectById(creepId);
-      if (!creep) {
-        return;
-      }
+  public get activeCreeps(): Record<Id<Creep>, ActiveCreepMemory> {
+    return this.memory.activeCreeps;
+  }
 
-      if (creepMemory.activeTask) {
-        switch (creepMemory.activeTask) {
-          case TaskType.Harvest: {
-            const task = new HarvestTask(creep);
-            task.run();
-            break;
-          }
-          default:
-          // do nothing
-        }
-      } else {
-        this.memory.activeCreeps[creepId].activeTask = TaskType.Harvest;
+  public get sources(): Id<Source>[] {
+    return this.memory.availableSources;
+  }
+
+  public get spawns(): Id<StructureSpawn>[] {
+    return this.memory.spawns;
+  }
+
+  public run(): void {
+    // Must call first to sync intents we want to use
+    this.setIntents();
+
+    this.intents.forEach((intent) => {
+      const response = intent.run();
+      if (response.shouldAct) {
+        response.actions.forEach((action) => {
+          this.assignCreeps(
+            action.taskType,
+            action.assignedCreeps,
+            action.targetId
+          );
+        });
       }
     });
+
+    Object.values(this.activeCreeps)
+      .filter((creep) => creep.activeTask)
+      .forEach((activeCreep) => {
+        const creep = Game.getObjectById(activeCreep.creepId);
+
+        if (!creep) {
+          return;
+        }
+
+        switch (activeCreep.activeTask?.taskType) {
+          case TaskType.Harvest: {
+            const task = new HarvestTask(
+              creep,
+              activeCreep.activeTask.targetId as Id<Source>
+            );
+            task.run();
+          }
+        }
+      });
   }
 }
