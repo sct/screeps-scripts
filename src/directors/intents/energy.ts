@@ -1,5 +1,4 @@
 import { TaskType } from 'tasks/task';
-import log from 'utils/logger';
 import { Intent, IntentAction, IntentResponse } from './intent';
 
 export class EnergyIntent extends Intent {
@@ -51,14 +50,9 @@ export class EnergyIntent extends Intent {
         }
         return accSourceId;
       }, Object.keys(availableSources)[0] as Id<Source>);
-      log.debug('Least Assigned Source ID', {
-        sourceId: leastAssignedSourceId,
-      });
 
       availableSources[leastAssignedSourceId].assignedCreeps += 1;
     });
-
-    log.debug('Available Sources', { availableSources });
 
     actions.push(
       ...(

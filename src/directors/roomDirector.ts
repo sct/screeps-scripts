@@ -146,13 +146,9 @@ export class RoomDirector {
         memory.activeTask?.targetId === action.targetId
     ).length;
 
-    log.debug('Current working creeps', { working });
-
     if (working < action.assignedCreeps) {
       const difference = action.assignedCreeps - working;
       let left = difference;
-
-      log.debug('Difference', { difference });
 
       [...Array(difference).keys()].forEach(() => {
         const unassignedCreep = Object.values(this.activeCreeps).find(
