@@ -6,12 +6,19 @@ export class BuildIntent extends Intent {
 
   private getAssignedCreeps(): number {
     switch (this.roomDirector.memory.rcl) {
+      case 8:
+      case 7:
+      case 6:
+      case 5:
+      case 4:
+      case 3:
       case 2:
         return 4;
       default:
         return 0;
     }
   }
+
   public run(): IntentResponse {
     const actions: IntentAction[] = [];
     const constructionSites = this.roomDirector.room.find(

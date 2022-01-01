@@ -3,6 +3,7 @@ export enum TaskType {
   Transport,
   Build,
   Upgrade,
+  Repair,
 }
 
 export abstract class Task<Target> {

@@ -11,6 +11,20 @@ export class EnergyIntent extends Intent {
         this.roomDirector.memory.spawnCapacity <
       EnergyIntent.ENERGY_EMERGENCY_THRESHOLD;
     switch (this.roomDirector.memory.rcl) {
+      case 8:
+      case 7:
+      case 6:
+        if (emergency) {
+          return 10;
+        }
+        return 8;
+      case 5:
+      case 4:
+        if (emergency) {
+          return 8;
+        }
+        return 5;
+      case 3:
       case 2:
         if (emergency) {
           return 5;

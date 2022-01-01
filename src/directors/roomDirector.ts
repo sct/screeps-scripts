@@ -1,5 +1,6 @@
 import { BuildTask } from 'tasks/build';
 import { HarvestTask } from 'tasks/harvest';
+import { RepairTask } from 'tasks/repair';
 import { TaskType } from 'tasks/task';
 import { UpgradeTask } from 'tasks/upgrade';
 import log from 'utils/logger';
@@ -7,6 +8,7 @@ import { CreepDirector, CreepType } from './creepDirector';
 import { BuildIntent } from './intents/build';
 import { EnergyIntent } from './intents/energy';
 import { Intent, IntentAction } from './intents/intent';
+import { RepairIntent } from './intents/repair';
 import { UpgradeIntent } from './intents/upgrade';
 
 interface ActiveTaskMemory {
@@ -95,9 +97,20 @@ export class RoomDirector {
     const intents: Intent[] = [];
 
     switch (this.memory.rcl) {
+      case 8:
+      case 7:
+      case 6:
+      case 5:
+      case 4:
+      case 3:
       case 2:
-        intents.push(new BuildIntent({ roomDirector: this }));
-      // eslint-disable-next-line no-fallthrough
+        intents.push(
+          new EnergyIntent({ roomDirector: this }),
+          new UpgradeIntent({ roomDirector: this }),
+          new BuildIntent({ roomDirector: this }),
+          new RepairIntent({ roomDirector: this })
+        );
+        break;
       default:
         intents.push(
           new EnergyIntent({ roomDirector: this }),
@@ -219,7 +232,6 @@ export class RoomDirector {
     this.memory.activeIntentActions = activeIntentActions;
 
     Object.values(this.activeCreeps)
-      .filter((creep) => creep.activeTask)
       .forEach((activeCreep) => {
         const creep = Game.getObjectById(activeCreep.creepId);
 
@@ -241,6 +253,14 @@ export class RoomDirector {
             task.run();
             break;
           }
+          case TaskType.Repair: {
+            const task = new RepairTask(
+              creep,
+              activeCreep.activeTask.targetId as Id<AnyStructure>
+            );
+            task.run();
+            break;
+          }
           case TaskType.Harvest:
           default: {
             const task = new HarvestTask(
@@ -258,7 +278,8 @@ export class RoomDirector {
       if (
         !this.memory.activeIntentActions.some(
           (action) => creepMemory.activeTask?.taskKey === action.id
-        )
+        ) &&
+        this.memory.activeCreeps[creepMemory.creepId]
       ) {
         this.memory.activeCreeps[creepMemory.creepId].activeTask = null;
       }
