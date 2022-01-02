@@ -30,6 +30,8 @@ export class CreepDirector {
       spawn.spawnCreep(CreepSetups[type][size], creepName, {
         memory: {
           role: Role.Harvester,
+          type,
+          size,
           room: this.roomDirector.room.name,
           working: false,
         },

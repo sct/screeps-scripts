@@ -125,16 +125,16 @@ export class RoomDirector {
   private updateCreepList() {
     const activeCreeps = Game.rooms[this.room.name]
       .find(FIND_MY_CREEPS)
-      .map((creep): { type: CreepType; id: Id<Creep> } => ({
+      .map((creep): { type: CreepType; id: Id<Creep>; size: CreepSize } => ({
         type: creep.memory.type ?? 'drone',
         id: creep.id,
+        size: creep.memory.size ?? 'default',
       }));
     log.debug(`Active creep count: ${activeCreeps.length}`, {
       label: 'Room Director',
     });
 
-    const currentCreeps = Object.assign(
-      {},
+    const currentCreeps = _.merge(
       (activeCreeps ?? []).reduce<RoomDirectorMemory['activeCreeps']>(
         (acc, creep) => ({
           ...acc,
@@ -142,6 +142,7 @@ export class RoomDirector {
             creepId: creep.id,
             activeTask: null,
             creepType: creep.type,
+            creepSize: creep.size,
           },
         }),
         {}
@@ -175,15 +176,23 @@ export class RoomDirector {
             (activeCreepMemory) =>
               !activeCreepMemory.activeTask &&
               activeCreepMemory.creepType === creepConfig.creepType &&
-              activeCreepMemory.creepSize === creepConfig.creepSize
+              activeCreepMemory.creepSize ===
+                (creepConfig.creepSize ?? 'default')
           )?.creepId;
 
           if (unassignedCreep) {
+            this.activeCreeps[unassignedCreep].creepType =
+              creepConfig.creepType;
+            this.activeCreeps[unassignedCreep].creepSize =
+              creepConfig.creepSize;
             this.activeCreeps[unassignedCreep].activeTask = {
               taskKey: action.id,
               taskType: action.taskType,
               targetId: action.targetId,
             };
+            log.debug('Assigned creep', {
+              assigned: this.activeCreeps[unassignedCreep],
+            });
             remaining -= 1;
           }
         });
@@ -282,13 +291,18 @@ export class RoomDirector {
     });
 
     // Clean up any creeps that no longer have an active intent
-    _.forEach(this.activeCreeps, (creepMemory) => {
+    _.forEach(this.memory.activeCreeps, (creepMemory) => {
       if (
-        !this.memory.activeIntentActions.some(
+        creepMemory.activeTask &&
+        !this.memory.activeIntentActions.find(
           (action) => creepMemory.activeTask?.taskKey === action.id
         ) &&
         this.memory.activeCreeps[creepMemory.creepId]
       ) {
+        log.debug('Clearing dead task for creep', {
+          id: creepMemory.creepId,
+          task: creepMemory.activeTask?.taskKey,
+        });
         this.memory.activeCreeps[creepMemory.creepId].activeTask = null;
       }
     });

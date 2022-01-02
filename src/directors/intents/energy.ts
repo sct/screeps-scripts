@@ -9,11 +9,11 @@ export class EnergyIntent extends Intent {
   protected getAssignedCreeps(): CreepConfig[] {
     const harvesterCreeps = Object.values(
       this.roomDirector.activeCreeps
-    ).filter((creep) => creep.activeTask?.taskType === TaskType.Harvest);
+    ).filter(
+      (creep) =>
+        creep.activeTask?.taskType === TaskType.Harvest || !creep.activeTask
+    );
     const emergency =
-      this.roomDirector.memory.availableSpawnEnergy /
-        this.roomDirector.memory.spawnCapacity <
-        EnergyIntent.ENERGY_EMERGENCY_THRESHOLD ||
       harvesterCreeps.length < EnergyIntent.HARVESTER_EMERGENCY_THRESHOLD;
     switch (this.roomDirector.memory.rcl) {
       case 8:

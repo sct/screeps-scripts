@@ -112,16 +112,17 @@ export abstract class Intent {
             Object.values(source).reduce((acc, v) => acc + v.creepCount, 0) > 0
         )
         .map(([sourceId, source]): IntentAction => {
+          const totalCreeps = Object.values(source).reduce((acc, v) => acc + v.creepCount, 0);
           return {
             id: this.getTaskKey(
               taskType,
-              Object.values(source).reduce((acc, v) => acc + v.creepCount, 0),
+              totalCreeps,
               sourceId
             ),
             taskType,
             targetId: sourceId,
             creeps: source,
-            totalCreeps: this.getTotalCreeps(),
+            totalCreeps,
           };
         })
     );

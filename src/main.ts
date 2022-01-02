@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 import { runTower } from 'buildings/tower';
 import { Role } from 'creeps/creepWrapper';
-import { CreepType } from 'directors/creepDirector';
+import { CreepSize, CreepType } from 'directors/creepDirector';
 import { RoomDirector } from 'directors/roomDirector';
 import { ErrorMapper } from 'utils/ErrorMapper';
 import 'utils/traveler';
@@ -24,6 +24,7 @@ declare global {
   interface CreepMemory {
     role: Role;
     type?: CreepType;
+    size?: CreepSize;
     room: string;
     working: boolean;
     harvestTarget?: string;
