@@ -1,17 +1,32 @@
 import { TaskType } from 'tasks/task';
-import { Intent, IntentAction, IntentResponse } from './intent';
+import { CreepConfig, Intent, IntentAction, IntentResponse } from './intent';
 
-
+interface StructureRepairConfigData {
+  repairThreshold: number;
+  repairedTreshold: number;
+}
 // Config for structures defining the threshold for repair
-const StructureRepairConfig: { [K in StructureConstant]?: number } = {
-  [STRUCTURE_ROAD]: 0.3,
-  [STRUCTURE_RAMPART]: 0.1,
+const StructureRepairConfig: {
+  [K in StructureConstant]?: StructureRepairConfigData;
+} = {
+  [STRUCTURE_ROAD]: {
+    repairThreshold: 0.5,
+    repairedTreshold: 1.0,
+  },
+  [STRUCTURE_RAMPART]: {
+    repairThreshold: 0.05,
+    repairedTreshold: 0.1,
+  },
+  [STRUCTURE_WALL]: {
+    repairThreshold: 0.0005,
+    repairedTreshold: 0.001,
+  },
 };
 
 export class RepairIntent extends Intent {
   protected intentKey = 'repair';
 
-  private getAssignedCreeps(): number {
+  public getAssignedCreeps(): CreepConfig[] {
     switch (this.roomDirector.memory.rcl) {
       case 8:
       case 7:
@@ -20,18 +35,39 @@ export class RepairIntent extends Intent {
       case 4:
       case 3:
       case 2:
-        return 3;
+        return [
+          {
+            creepType: 'drone',
+            creepCount: 3,
+          },
+        ];
       default:
-        return 0;
+        return [
+          {
+            creepType: 'drone',
+            creepCount: 0,
+          },
+        ];
     }
   }
 
   private needsRepair(structure: AnyStructure) {
-    return (
-      structure.hits <
-      structure.hitsMax *
-        (StructureRepairConfig[structure.structureType] ?? 0.05)
+    const inProgress = this.roomDirector.memory.activeIntentActions.some(
+      (action) =>
+        action.targetId === structure.id && action.taskType === TaskType.Repair
     );
+
+    const damagedPercent = structure.hits / structure.hitsMax;
+    const repairConfig = StructureRepairConfig[structure.structureType] ?? {
+      repairThreshold: 0.05,
+      repairedTreshold: 0.1,
+    };
+
+    if (inProgress && damagedPercent < repairConfig.repairedTreshold) {
+      return true;
+    }
+
+    return damagedPercent < repairConfig.repairThreshold;
   }
 
   public run(): IntentResponse {
@@ -47,56 +83,11 @@ export class RepairIntent extends Intent {
       };
     }
 
-    const availableStructures = damagedStructures.reduce(
-      (acc, structure) => ({
-        ...acc,
-        [structure.id]: {
-          assignedCreeps: 0,
-        },
-      }),
-      {} as { [structureId: Id<AnyStructure>]: { assignedCreeps: number } }
-    );
-
-    [...Array(this.getAssignedCreeps()).keys()].forEach(() => {
-      const leastAssignedStructureId = (
-        Object.entries(availableStructures) as [
-          Id<AnyStructure>,
-          { assignedCreeps: number }
-        ][]
-      ).reduce((accStructureId, [structureId, site]) => {
-        if (
-          site.assignedCreeps <
-          availableStructures[accStructureId].assignedCreeps
-        ) {
-          return structureId;
-        }
-        return accStructureId;
-      }, Object.keys(availableStructures)[0] as Id<AnyStructure>);
-
-      availableStructures[leastAssignedStructureId].assignedCreeps += 1;
-    });
-
     actions.push(
-      ...(
-        Object.entries(availableStructures) as [
-          Id<AnyStructure>,
-          { assignedCreeps: number }
-        ][]
+      ...this.assignCreepsToTargets<AnyStructure>(
+        damagedStructures.map((structure) => structure.id),
+        TaskType.Repair
       )
-        .filter(([, structure]) => structure.assignedCreeps > 0)
-        .map(([structureId, structure]): IntentAction => {
-          return {
-            id: this.getTaskKey(
-              TaskType.Build,
-              structure.assignedCreeps,
-              structureId
-            ),
-            taskType: TaskType.Repair,
-            targetId: structureId,
-            assignedCreeps: structure.assignedCreeps,
-            creepType: 'drone',
-          };
-        })
     );
 
     return {

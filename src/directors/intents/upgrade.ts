@@ -1,35 +1,80 @@
 import { TaskType } from 'tasks/task';
-import { Intent, IntentAction, IntentResponse } from './intent';
+import {
+  CreepConfig,
+  CreepsRecord,
+  Intent,
+  IntentAction,
+  IntentResponse
+} from './intent';
 
 export class UpgradeIntent extends Intent {
   protected intentKey = 'upgrade';
 
-  private getAssignedCreeps(): number {
+  protected getAssignedCreeps(): CreepConfig[] {
     switch (this.roomDirector.memory.rcl) {
       case 8:
       case 7:
       case 6:
-        return 8;
+        return [
+          {
+            creepType: 'drone',
+            creepSize: 'standard',
+            creepCount: 3,
+          },
+        ];
       case 5:
       case 4:
-        return 5;
+        return [
+          {
+            creepType: 'drone',
+            creepSize: 'standard',
+            creepCount: 2,
+          },
+        ];
       case 3:
       case 2:
-        return 3;
+        return [
+          {
+            creepType: 'drone',
+            creepCount: 3,
+          },
+        ];
       default:
-        return 2;
+        return [
+          {
+            creepType: 'drone',
+            creepCount: 1,
+          },
+        ];
     }
   }
 
   public run(): IntentResponse {
     const actions: IntentAction[] = [];
 
+    const assignedCreeps = this.getAssignedCreeps();
+    const totalCreeps = assignedCreeps.reduce(
+      (total, creepConfig) => total + creepConfig.creepCount,
+      0
+    );
+    const creeps = assignedCreeps.reduce(
+      (acc, cc) => ({
+        ...acc,
+        [`${cc.creepType}:${cc.creepSize ?? 'default'}`]: cc,
+      }),
+      {} as CreepsRecord
+    );
+
     actions.push({
-      id: this.getTaskKey(TaskType.Build, this.getAssignedCreeps(), this.roomDirector.memory.roomController),
+      id: this.getTaskKey(
+        TaskType.Build,
+        totalCreeps,
+        this.roomDirector.memory.roomController
+      ),
       taskType: TaskType.Upgrade,
       targetId: this.roomDirector.memory.roomController,
-      assignedCreeps: this.getAssignedCreeps(),
-      creepType: 'drone',
+      creeps,
+      totalCreeps,
     });
 
     return {

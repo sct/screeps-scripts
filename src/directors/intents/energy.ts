@@ -1,91 +1,108 @@
 import { TaskType } from 'tasks/task';
-import { Intent, IntentAction, IntentResponse } from './intent';
+import { CreepConfig, Intent, IntentAction, IntentResponse } from './intent';
 
 export class EnergyIntent extends Intent {
   protected intentKey = 'energy';
   public static ENERGY_EMERGENCY_THRESHOLD = 0.1;
+  public static HARVESTER_EMERGENCY_THRESHOLD = 2;
 
-  private getAssignedCreeps(): number {
+  protected getAssignedCreeps(): CreepConfig[] {
+    const harvesterCreeps = Object.values(
+      this.roomDirector.activeCreeps
+    ).filter((creep) => creep.activeTask?.taskType === TaskType.Harvest);
     const emergency =
       this.roomDirector.memory.availableSpawnEnergy /
         this.roomDirector.memory.spawnCapacity <
-      EnergyIntent.ENERGY_EMERGENCY_THRESHOLD;
+        EnergyIntent.ENERGY_EMERGENCY_THRESHOLD ||
+      harvesterCreeps.length < EnergyIntent.HARVESTER_EMERGENCY_THRESHOLD;
     switch (this.roomDirector.memory.rcl) {
       case 8:
       case 7:
       case 6:
         if (emergency) {
-          return 10;
+          return [
+            {
+              creepType: 'drone',
+              creepCount: 6,
+            },
+            {
+              creepType: 'drone',
+              creepSize: 'standard',
+              creepCount: 4,
+            },
+          ];
         }
-        return 8;
+        return [
+          {
+            creepType: 'drone',
+            creepSize: 'standard',
+            creepCount: 4,
+          },
+        ];
       case 5:
       case 4:
         if (emergency) {
-          return 8;
+          return [
+            {
+              creepType: 'drone',
+              creepCount: 5,
+            },
+            {
+              creepType: 'drone',
+              creepSize: 'standard',
+              creepCount: 1,
+            },
+          ];
         }
-        return 5;
+        return [
+          {
+            creepType: 'drone',
+            creepSize: 'standard',
+            creepCount: 2,
+          },
+        ];
       case 3:
       case 2:
         if (emergency) {
-          return 5;
+          return [
+            {
+              creepType: 'drone',
+              creepCount: 5,
+            },
+          ];
         }
-        return 3;
+        return [
+          {
+            creepType: 'drone',
+            creepCount: 3,
+          },
+        ];
       default:
         if (emergency) {
-          return 3;
+          return [
+            {
+              creepType: 'drone',
+              creepCount: 3,
+            },
+          ];
         }
-        return 2;
+        return [
+          {
+            creepType: 'drone',
+            creepCount: 2,
+          },
+        ];
     }
   }
 
   public run(): IntentResponse {
     const actions: IntentAction[] = [];
 
-    const availableSources = this.roomDirector.sources.reduce(
-      (acc, source) => ({
-        ...acc,
-        [source]: {
-          assignedCreeps: 0,
-        },
-      }),
-      {} as { [sourceId: Id<Source>]: { assignedCreeps: number } }
-    );
-
-    [...Array(this.getAssignedCreeps()).keys()].forEach(() => {
-      const leastAssignedSourceId = (
-        Object.entries(availableSources) as [
-          Id<Source>,
-          { assignedCreeps: number }
-        ][]
-      ).reduce((accSourceId, [sourceId, source]) => {
-        if (
-          source.assignedCreeps < availableSources[accSourceId].assignedCreeps
-        ) {
-          return sourceId;
-        }
-        return accSourceId;
-      }, Object.keys(availableSources)[0] as Id<Source>);
-
-      availableSources[leastAssignedSourceId].assignedCreeps += 1;
-    });
-
     actions.push(
-      ...(
-        Object.entries(availableSources) as [
-          Id<Source>,
-          { assignedCreeps: number }
-        ][]
+      ...this.assignCreepsToTargets<Source>(
+        this.roomDirector.sources,
+        TaskType.Harvest
       )
-        .filter(([, source]) => source.assignedCreeps > 0)
-        .map(([sourceId, source]): IntentAction => {
-          return {
-            id: this.getTaskKey(TaskType.Harvest, source.assignedCreeps, sourceId),
-            taskType: TaskType.Harvest,
-            targetId: sourceId,
-            assignedCreeps: source.assignedCreeps,
-            creepType: 'drone',
-          };
-        })
     );
 
     return {
