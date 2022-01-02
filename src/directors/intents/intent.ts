@@ -20,6 +20,7 @@ export interface IntentAction {
   creeps: CreepsRecord;
   totalCreeps: number;
   targetId?: Id<any>;
+  subTargetId?: Id<any>;
 }
 
 export interface IntentResponse {
@@ -54,7 +55,8 @@ export abstract class Intent {
 
   protected assignCreepsToTargets<T>(
     targets: Id<T>[],
-    taskType: TaskType
+    taskType: TaskType,
+    subTargetId?: Id<any>
   ): IntentAction[] {
     const actions: IntentAction[] = [];
 
@@ -112,17 +114,17 @@ export abstract class Intent {
             Object.values(source).reduce((acc, v) => acc + v.creepCount, 0) > 0
         )
         .map(([sourceId, source]): IntentAction => {
-          const totalCreeps = Object.values(source).reduce((acc, v) => acc + v.creepCount, 0);
+          const totalCreeps = Object.values(source).reduce(
+            (acc, v) => acc + v.creepCount,
+            0
+          );
           return {
-            id: this.getTaskKey(
-              taskType,
-              totalCreeps,
-              sourceId
-            ),
+            id: this.getTaskKey(taskType, totalCreeps, sourceId),
             taskType,
             targetId: sourceId,
             creeps: source,
             totalCreeps,
+            subTargetId,
           };
         })
     );

@@ -2,6 +2,7 @@ import { BuildTask } from 'tasks/build';
 import { HarvestTask } from 'tasks/harvest';
 import { RepairTask } from 'tasks/repair';
 import { TaskType } from 'tasks/task';
+import { TransportTask } from 'tasks/transport';
 import { UpgradeTask } from 'tasks/upgrade';
 import log from 'utils/logger';
 import { CreepDirector, CreepSize, CreepType } from './creepDirector';
@@ -9,12 +10,14 @@ import { BuildIntent } from './intents/build';
 import { EnergyIntent } from './intents/energy';
 import { Intent, IntentAction } from './intents/intent';
 import { RepairIntent } from './intents/repair';
+import { TransportToStorageIntent } from './intents/transportToStorage';
 import { UpgradeIntent } from './intents/upgrade';
 
 interface ActiveTaskMemory {
   taskKey: string;
   taskType: TaskType;
-  targetId?: Id<AnyStructure | Source | ConstructionSite>;
+  targetId?: Id<any>;
+  subTargetId?: Id<any>;
 }
 
 interface ActiveCreepMemory {
@@ -24,8 +27,9 @@ interface ActiveCreepMemory {
   creepSize?: CreepSize;
 }
 
-interface RoomDirectorMemory {
+export interface RoomDirectorMemory {
   lastUpdate: number;
+  lastSpawn: number;
   activeCreeps: Record<Id<Creep>, ActiveCreepMemory>;
   availableSpawnEnergy: number;
   availableStoredEnergy: number;
@@ -79,6 +83,7 @@ export class RoomDirector {
 
       this.memory = {
         lastUpdate: Game.time,
+        lastSpawn: this.memory.lastSpawn ?? 0,
         activeCreeps: this.updateCreepList(),
         availableSpawnEnergy,
         availableStoredEnergy,
@@ -103,6 +108,14 @@ export class RoomDirector {
       case 6:
       case 5:
       case 4:
+        intents.push(
+          new EnergyIntent({ roomDirector: this }),
+          new UpgradeIntent({ roomDirector: this }),
+          new TransportToStorageIntent({ roomDirector: this }),
+          new BuildIntent({ roomDirector: this }),
+          new RepairIntent({ roomDirector: this })
+        );
+        break;
       case 3:
       case 2:
         intents.push(
@@ -164,7 +177,7 @@ export class RoomDirector {
       const workingThisType = Object.values(this.activeCreeps).filter(
         (memory) =>
           memory.activeTask?.taskKey === action.id &&
-          memory.creepSize === creepConfig.creepSize &&
+          memory.creepSize === (creepConfig.creepSize ?? 'default') &&
           memory.creepType === creepConfig.creepType
       ).length;
 
@@ -189,6 +202,7 @@ export class RoomDirector {
               taskKey: action.id,
               taskType: action.taskType,
               targetId: action.targetId,
+              subTargetId: action.subTargetId,
             };
             log.debug('Assigned creep', {
               assigned: this.activeCreeps[unassignedCreep],
@@ -199,12 +213,17 @@ export class RoomDirector {
 
         if (remaining) {
           const spawn = Game.getObjectById(this.spawns[0]);
-          if (spawn && !spawn.spawning) {
+          if (
+            spawn &&
+            !spawn.spawning &&
+            (this.memory.lastSpawn ?? 0) + 21 < Game.time
+          ) {
             this.creepDirector.spawnCreep(
               spawn,
               creepConfig.creepType,
               creepConfig.creepSize
             );
+            this.memory.lastSpawn = Game.time;
           }
         }
       }
@@ -274,6 +293,15 @@ export class RoomDirector {
           const task = new RepairTask(
             creep,
             activeCreep.activeTask.targetId as Id<AnyStructure>
+          );
+          task.run();
+          break;
+        }
+        case TaskType.Transport: {
+          const task = new TransportTask(
+            creep,
+            activeCreep.activeTask.targetId,
+            activeCreep.activeTask.subTargetId
           );
           task.run();
           break;

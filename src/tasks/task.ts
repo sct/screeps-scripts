@@ -6,14 +6,16 @@ export enum TaskType {
   Repair,
 }
 
-export abstract class Task<Target> {
+export abstract class Task<Target, SubTarget = void> {
   public abstract taskType: TaskType;
   protected creep: Creep;
   protected targetId?: Id<Target>;
+  protected subTargetId?: Id<SubTarget>;
 
-  public constructor(creep: Creep, targetId?: Id<Target>) {
+  public constructor(creep: Creep, targetId?: Id<Target>, subTargetId?: Id<SubTarget>) {
     this.creep = creep;
     this.targetId = targetId;
+    this.subTargetId = subTargetId;
   }
 
   protected currentStoredEnergy(): number {

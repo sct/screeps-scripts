@@ -1,3 +1,4 @@
+import { RoomDirectorMemory } from 'directors/roomDirector';
 import { Task, TaskType } from './task';
 
 export class HarvestTask extends Task<Source> {
@@ -7,7 +8,7 @@ export class HarvestTask extends Task<Source> {
     super(creep, targetId);
   }
 
-  public transferToStorage(): void {
+  public transferToStorage(preferStorage = false): void {
     const closestSpawn = this.creep.pos.findClosestByPath(FIND_STRUCTURES, {
       filter: (structure) =>
         (structure.structureType === STRUCTURE_EXTENSION ||
@@ -22,16 +23,19 @@ export class HarvestTask extends Task<Source> {
           structure.structureType === STRUCTURE_TOWER) &&
         structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0,
     });
+
+    const tryFirst = preferStorage ? closestStorage : closestSpawn;
+    const trySecond = preferStorage ? closestSpawn : closestStorage;
     if (
-      closestSpawn &&
-      this.creep.transfer(closestSpawn, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE
+      tryFirst &&
+      this.creep.transfer(tryFirst, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE
     ) {
-      this.creep.travelTo(closestSpawn);
+      this.creep.travelTo(tryFirst);
     } else if (
-      closestStorage &&
-      this.creep.transfer(closestStorage, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE
+      trySecond &&
+      this.creep.transfer(trySecond, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE
     ) {
-      this.creep.travelTo(closestStorage);
+      this.creep.travelTo(trySecond);
     }
   }
 
@@ -49,13 +53,31 @@ export class HarvestTask extends Task<Source> {
       this.creep.say('📦 storing energy');
     }
 
-    if (this.creep.memory.working) {
-      this.transferToStorage();
-    } else {
-      const targetSource = this.targetId
-        ? Game.getObjectById(this.targetId)
-        : this.getClosestSource();
+    const targetSource = this.targetId
+      ? Game.getObjectById(this.targetId)
+      : this.getClosestSource();
 
+    if (this.creep.memory.working) {
+      const containersInRange = targetSource?.pos.findInRange(
+        FIND_STRUCTURES,
+        3,
+        {
+          filter: (structure) =>
+            structure.structureType === STRUCTURE_CONTAINER &&
+            structure.store.getFreeCapacity() > 0,
+        }
+      );
+
+      const transportersAvailable = Object.values(
+        (this.creep.room.memory as RoomDirectorMemory).activeCreeps
+      ).some((creep) => creep.activeTask?.taskType === TaskType.Transport);
+      const preferStorage =
+        (this.creep.room.controller?.level ?? 0) >= 4 &&
+        !!containersInRange?.[0] &&
+        transportersAvailable;
+
+      this.transferToStorage(preferStorage);
+    } else {
       if (targetSource) {
         this.moveAndHarvest(targetSource);
       }

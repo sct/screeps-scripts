@@ -3,7 +3,7 @@ import { CreepConfig, Intent, IntentAction, IntentResponse } from './intent';
 
 interface StructureRepairConfigData {
   repairThreshold: number;
-  repairedTreshold: number;
+  repairedThreshold: number;
 }
 // Config for structures defining the threshold for repair
 const StructureRepairConfig: {
@@ -11,16 +11,20 @@ const StructureRepairConfig: {
 } = {
   [STRUCTURE_ROAD]: {
     repairThreshold: 0.5,
-    repairedTreshold: 1.0,
+    repairedThreshold: 1.0,
   },
   [STRUCTURE_RAMPART]: {
     repairThreshold: 0.05,
-    repairedTreshold: 0.1,
+    repairedThreshold: 0.1,
   },
   [STRUCTURE_WALL]: {
     repairThreshold: 0.0005,
-    repairedTreshold: 0.001,
+    repairedThreshold: 0.001,
   },
+  [STRUCTURE_CONTAINER]: {
+    repairThreshold: 0.2,
+    repairedThreshold: 0.4,
+  }
 };
 
 export class RepairIntent extends Intent {
@@ -60,10 +64,10 @@ export class RepairIntent extends Intent {
     const damagedPercent = structure.hits / structure.hitsMax;
     const repairConfig = StructureRepairConfig[structure.structureType] ?? {
       repairThreshold: 0.05,
-      repairedTreshold: 0.1,
+      repairedThreshold: 0.1,
     };
 
-    if (inProgress && damagedPercent < repairConfig.repairedTreshold) {
+    if (inProgress && damagedPercent < repairConfig.repairedThreshold) {
       return true;
     }
 

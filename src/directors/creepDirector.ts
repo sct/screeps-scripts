@@ -2,16 +2,35 @@ import { Role } from 'creeps/creepWrapper';
 import log from 'utils/logger';
 import { RoomDirector } from './roomDirector';
 
-export type CreepType = 'drone';
+export type CreepType = 'drone' | 'transport';
 export type CreepSize = 'emergency' | 'default' | 'standard';
 
-const CreepSetups: Record<CreepType, Record<CreepSize, BodyPartConstant[]>> = {
-  drone: {
-    emergency: [WORK, CARRY, MOVE],
-    default: [WORK, WORK, CARRY, MOVE],
-    standard: [WORK, WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE],
-  },
-};
+const CreepSetups: Record<CreepType, { [K in CreepSize]: BodyPartConstant[] }> =
+  {
+    drone: {
+      emergency: [WORK, CARRY, MOVE],
+      default: [WORK, WORK, CARRY, MOVE],
+      standard: [WORK, WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE],
+    },
+    transport: {
+      emergency: [CARRY, CARRY, CARRY, MOVE, MOVE],
+      default: [CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE],
+      standard: [
+        CARRY,
+        CARRY,
+        CARRY,
+        CARRY,
+        CARRY,
+        CARRY,
+        CARRY,
+        MOVE,
+        MOVE,
+        MOVE,
+        MOVE,
+        MOVE,
+      ],
+    },
+  };
 
 export class CreepDirector {
   private roomDirector: RoomDirector;
