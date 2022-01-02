@@ -1,7 +1,9 @@
 export const runTower = (tower: StructureTower): void => {
   const target = tower.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
   const repairables = tower.room.find(FIND_STRUCTURES, {
-    filter: structure => structure.hits < structure.hitsMax
+    filter: (structure) =>
+      structure.hits < structure.hitsMax &&
+      structure.structureType === STRUCTURE_ROAD,
   });
 
   const lowestHits = repairables.reduce(

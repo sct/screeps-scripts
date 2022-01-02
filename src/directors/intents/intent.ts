@@ -28,7 +28,7 @@ export abstract class Intent {
   }
 
   protected getTaskKey(taskType: TaskType, creeps: number, targetId = 'none'): string {
-    return `${this.intentKey}:${taskType}:${creeps}:${targetId.slice(0,5)}`;
+    return `${this.intentKey}:${taskType}:${creeps}:${targetId.slice(-7)}`;
   }
 
   public abstract run(): IntentResponse;

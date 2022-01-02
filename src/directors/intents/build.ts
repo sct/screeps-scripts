@@ -9,6 +9,7 @@ export class BuildIntent extends Intent {
       case 8:
       case 7:
       case 6:
+        return 6;
       case 5:
       case 4:
       case 3:

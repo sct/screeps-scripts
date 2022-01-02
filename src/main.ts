@@ -54,18 +54,22 @@ export const loop = ErrorMapper.wrapLoop(() => {
     const roomDirector = new RoomDirector(room);
     roomDirector.run();
 
+    const towers = room.find<FIND_STRUCTURES, StructureTower>(
+      FIND_STRUCTURES,
+      {
+        filter: (structure) => structure.structureType === STRUCTURE_TOWER,
+      }
+    );
+
+    towers.forEach((tower) => {
+      runTower(tower);
+    });
+
     const spawns = room.find(FIND_MY_SPAWNS);
 
     // spawns.forEach((spawn) => {
     //   creepSpawner(roomName, spawn.name);
     // });
-  }
-
-  const towerId = '61cba8ca4b54e4004cb15463' as Id<StructureTower>;
-  const onlyTower = Game.getObjectById(towerId);
-
-  if (onlyTower) {
-    runTower(onlyTower);
   }
 
   // Move harvesters to source and return to spawn

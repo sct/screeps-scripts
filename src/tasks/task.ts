@@ -33,14 +33,30 @@ export abstract class Task<Target> {
         structure.structureType === STRUCTURE_CONTAINER &&
         structure.store.energy > 0,
     });
+    const storage = this.creep.pos.findClosestByPath(FIND_STRUCTURES, {
+      filter: (structure) =>
+        structure.structureType === STRUCTURE_STORAGE &&
+        structure.store.energy > 0,
+    });
 
-    return containers.reduce((a: StructureContainer | undefined, container) => {
-      if (!a) {
-        return container;
-      } else {
-        return a.store.energy > container.store.energy ? a : container;
-      }
-    }, undefined);
+    const lowestContainer = containers.reduce(
+      (a: StructureContainer | undefined, container) => {
+        if (!a) {
+          return container;
+        } else {
+          return a.store.energy > container.store.energy ? a : container;
+        }
+      },
+      undefined
+    );
+
+    if (lowestContainer) {
+      return lowestContainer;
+    } else if (storage) {
+      return storage;
+    }
+
+    return undefined;
   }
 
   protected moveAndHarvest(

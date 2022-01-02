@@ -100,8 +100,8 @@ export class RepairIntent extends Intent {
     );
 
     return {
-      shouldAct: false,
-      actions: [],
+      shouldAct: true,
+      actions,
     };
   }
 }
