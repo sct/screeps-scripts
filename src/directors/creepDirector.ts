@@ -16,17 +16,6 @@ const CreepSetups: Record<CreepType, Record<CreepSize, BodyPartConstant[]>> = {
 export class CreepDirector {
   private roomDirector: RoomDirector;
 
-  public static PartCost: Record<BodyPartConstant, number> = {
-    [MOVE]: 50,
-    [WORK]: 100,
-    [CARRY]: 50,
-    [ATTACK]: 80,
-    [RANGED_ATTACK]: 150,
-    [HEAL]: 250,
-    [TOUGH]: 10,
-    [CLAIM]: 600,
-  };
-
   public constructor(roomDirector: RoomDirector) {
     this.roomDirector = roomDirector;
   }
@@ -46,9 +35,14 @@ export class CreepDirector {
         },
       }) === OK
     ) {
-      log.info(`Spawning new creep. Name: ${creepName} Type: ${type}`, {
-        label: 'Creep Director',
-      });
+      log.info(
+        `Spawning new creep. Name: ${creepName} Type: ${type} Cost: ${CreepSetups[
+          type
+        ][size].reduce((acc, v) => acc + BODYPART_COST[v], 0)}`,
+        {
+          label: 'Creep Director',
+        }
+      );
     }
   }
 }

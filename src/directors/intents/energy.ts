@@ -28,7 +28,7 @@ export class EnergyIntent extends Intent {
             {
               creepType: 'drone',
               creepSize: 'standard',
-              creepCount: 4,
+              creepCount: 1,
             },
           ];
         }
@@ -36,7 +36,7 @@ export class EnergyIntent extends Intent {
           {
             creepType: 'drone',
             creepSize: 'standard',
-            creepCount: 4,
+            creepCount: 2,
           },
         ];
       case 5:
