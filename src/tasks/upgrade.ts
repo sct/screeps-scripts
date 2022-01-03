@@ -1,5 +1,6 @@
 import { Task, TaskType } from './task';
 
+const DEFAULT_SIGN = 'All hail the our new overlord. sct.';
 export class UpgradeTask extends Task<StructureController> {
   public taskType = TaskType.Upgrade;
 
@@ -17,7 +18,16 @@ export class UpgradeTask extends Task<StructureController> {
     }
 
     if (this.creep.memory.working && this.creep.room.controller) {
-      if (
+      if (this.creep.room.controller.sign?.text !== DEFAULT_SIGN) {
+        if (
+          this.creep.signController(
+            this.creep.room.controller,
+            DEFAULT_SIGN
+          ) === ERR_NOT_IN_RANGE
+        ) {
+          this.creep.moveTo(this.creep.room.controller);
+        }
+      } else if (
         this.creep.upgradeController(this.creep.room.controller) ===
         ERR_NOT_IN_RANGE
       ) {
