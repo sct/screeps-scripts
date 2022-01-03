@@ -1,8 +1,8 @@
 import { TaskType } from 'tasks/task';
 import { CreepConfig, Intent, IntentAction, IntentResponse } from './intent';
 
-export class TransportToStorageIntent extends Intent {
-  protected intentKey = 'transportToStorage';
+export class TransportToControllerIntent extends Intent {
+  protected intentKey = 'transportToController';
 
   protected getAssignedCreeps(): CreepConfig[] {
     switch (this.roomDirector.memory.rcl) {
@@ -11,23 +11,25 @@ export class TransportToStorageIntent extends Intent {
       case 6:
         return [
           {
+            creepCount: 1,
             creepType: 'transport',
-            creepCount: 2,
+            creepSize: 'double',
           },
         ];
       case 5:
       case 4:
         return [
           {
+            creepCount: 1,
             creepType: 'transport',
-            creepCount: 2,
+            creepSize: 'standard',
           },
         ];
       default:
         return [
           {
-            creepType: 'transport',
             creepCount: 0,
+            creepType: 'transport',
           },
         ];
     }
@@ -36,30 +38,23 @@ export class TransportToStorageIntent extends Intent {
   public run(): IntentResponse {
     const actions: IntentAction[] = [];
 
+    const controller = this.roomDirector.room.controller;
     const storage = this.roomDirector.room.storage;
-    if (!storage) {
+    if (!controller || !storage) {
       return {
         shouldAct: false,
         actions: [],
       };
     }
 
-    const containers: StructureContainer[] = [];
+    const closestContainer = controller.pos.findInRange<
+      FIND_STRUCTURES,
+      StructureContainer
+    >(FIND_STRUCTURES, 3, {
+      filter: (structure) => structure.structureType === STRUCTURE_CONTAINER,
+    })?.[0];
 
-    this.roomDirector.room.find(FIND_SOURCES).forEach((source) => {
-      const container = source.pos.findInRange<
-        FIND_STRUCTURES,
-        StructureContainer
-      >(FIND_STRUCTURES, 4, {
-        filter: (structure) => structure.structureType === STRUCTURE_CONTAINER,
-      })[0];
-
-      if (container) {
-        containers.push(container);
-      }
-    });
-
-    if (containers.length === 0) {
+    if (!closestContainer) {
       return {
         shouldAct: false,
         actions: [],
@@ -67,15 +62,15 @@ export class TransportToStorageIntent extends Intent {
     }
 
     actions.push(
-      ...this.assignCreepsToTargets<StructureContainer>(
-        containers.map((c) => c.id),
+      ...this.assignCreepsToTargets(
+        [storage.id],
         TaskType.Transport,
-        storage.id
+        closestContainer.id
       )
     );
 
     return {
-      shouldAct: true,
+      shouldAct: actions.length > 0,
       actions,
     };
   }

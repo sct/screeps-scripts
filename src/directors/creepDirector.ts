@@ -3,7 +3,7 @@ import log from 'utils/logger';
 import { RoomDirector } from './roomDirector';
 
 export type CreepType = 'drone' | 'transport';
-export type CreepSize = 'emergency' | 'default' | 'standard';
+export type CreepSize = 'emergency' | 'default' | 'standard' | 'double';
 
 const CreepSetups: Record<CreepType, { [K in CreepSize]: BodyPartConstant[] }> =
   {
@@ -11,6 +11,7 @@ const CreepSetups: Record<CreepType, { [K in CreepSize]: BodyPartConstant[] }> =
       emergency: [WORK, CARRY, MOVE],
       default: [WORK, WORK, CARRY, MOVE],
       standard: [WORK, WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE],
+      double: [WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE],
     },
     transport: {
       emergency: [CARRY, CARRY, CARRY, MOVE, MOVE],
@@ -23,6 +24,30 @@ const CreepSetups: Record<CreepType, { [K in CreepSize]: BodyPartConstant[] }> =
         CARRY,
         CARRY,
         CARRY,
+        MOVE,
+        MOVE,
+        MOVE,
+        MOVE,
+        MOVE,
+      ],
+      double: [
+        CARRY,
+        CARRY,
+        CARRY,
+        CARRY,
+        CARRY,
+        CARRY,
+        CARRY,
+        CARRY,
+        CARRY,
+        CARRY,
+        CARRY,
+        CARRY,
+        CARRY,
+        CARRY,
+        MOVE,
+        MOVE,
+        MOVE,
         MOVE,
         MOVE,
         MOVE,

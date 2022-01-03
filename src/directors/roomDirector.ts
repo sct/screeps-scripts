@@ -10,6 +10,7 @@ import { BuildIntent } from './intents/build';
 import { EnergyIntent } from './intents/energy';
 import { Intent, IntentAction } from './intents/intent';
 import { RepairIntent } from './intents/repair';
+import { TransportToControllerIntent } from './intents/transportToController';
 import { TransportToStorageIntent } from './intents/transportToStorage';
 import { UpgradeIntent } from './intents/upgrade';
 
@@ -112,6 +113,7 @@ export class RoomDirector {
           new EnergyIntent({ roomDirector: this }),
           new UpgradeIntent({ roomDirector: this }),
           new TransportToStorageIntent({ roomDirector: this }),
+          new TransportToControllerIntent({ roomDirector: this }),
           new BuildIntent({ roomDirector: this }),
           new RepairIntent({ roomDirector: this })
         );
@@ -301,7 +303,8 @@ export class RoomDirector {
           const task = new TransportTask(
             creep,
             activeCreep.activeTask.targetId,
-            activeCreep.activeTask.subTargetId
+            activeCreep.activeTask.subTargetId,
+            activeCreep.activeTask.taskKey.startsWith('transportToController')
           );
           task.run();
           break;

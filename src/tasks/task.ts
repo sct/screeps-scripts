@@ -27,7 +27,7 @@ export abstract class Task<Target, SubTarget = void> {
   }
 
   protected getClosestContainerEnergy(): AnyStructure | undefined {
-    const containers = this.creep.room.find<
+    const container = this.creep.pos.findClosestByPath<
       FIND_STRUCTURES,
       StructureContainer
     >(FIND_STRUCTURES, {
@@ -41,19 +41,8 @@ export abstract class Task<Target, SubTarget = void> {
         structure.store.energy > 0,
     });
 
-    const lowestContainer = containers.reduce(
-      (a: StructureContainer | undefined, container) => {
-        if (!a) {
-          return container;
-        } else {
-          return a.store.energy > container.store.energy ? a : container;
-        }
-      },
-      undefined
-    );
-
-    if (lowestContainer) {
-      return lowestContainer;
+    if (container) {
+      return container;
     } else if (storage) {
       return storage;
     }

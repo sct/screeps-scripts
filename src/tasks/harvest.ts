@@ -70,7 +70,11 @@ export class HarvestTask extends Task<Source> {
 
       const transportersAvailable = Object.values(
         (this.creep.room.memory as RoomDirectorMemory).activeCreeps
-      ).some((creep) => creep.activeTask?.taskType === TaskType.Transport);
+      ).some(
+        (creep) =>
+          creep.activeTask?.taskType === TaskType.Transport &&
+          creep.activeTask?.taskKey.startsWith('transportToStorage')
+      );
       const preferStorage =
         (this.creep.room.controller?.level ?? 0) >= 4 &&
         !!containersInRange?.[0] &&

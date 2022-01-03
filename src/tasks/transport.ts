@@ -11,6 +11,19 @@ export class TransportTask extends Task<
   StorableStructures
 > {
   public taskType = TaskType.Transport;
+  private preferSubtarget = false;
+
+  public constructor(
+    creep: Creep,
+    targetId?: Id<StorableStructures>,
+    subTargetId?: Id<StorableStructures>,
+    preferSubTarget?: boolean
+  ) {
+    super(creep, targetId, subTargetId);
+    if (preferSubTarget) {
+      this.preferSubtarget = preferSubTarget;
+    }
+  }
 
   public run(): void {
     if (this.creep.memory.working && this.creep.store[RESOURCE_ENERGY] === 0) {
@@ -35,15 +48,19 @@ export class TransportTask extends Task<
 
       const target = Game.getObjectById(this.subTargetId);
 
-      if (closestSpawn) {
+      const tryFirst = this.preferSubtarget ? target : closestSpawn;
+      const trySecond = this.preferSubtarget ? closestSpawn : target;
+
+      if (tryFirst) {
         if (
-          this.creep.transfer(closestSpawn, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE
+          this.creep.transfer(tryFirst, RESOURCE_ENERGY) ===
+          ERR_NOT_IN_RANGE
         ) {
-          this.creep.travelTo(closestSpawn);
+          this.creep.travelTo(tryFirst);
         }
-      } else if (target) {
-        if (this.creep.transfer(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-          this.creep.travelTo(target);
+      } else if (trySecond) {
+        if (this.creep.transfer(trySecond, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+          this.creep.travelTo(trySecond);
         }
       }
     } else if (this.targetId) {
