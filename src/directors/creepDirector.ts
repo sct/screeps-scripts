@@ -1,4 +1,3 @@
-import { Role } from 'creeps/creepWrapper';
 import log from 'utils/logger';
 import { RoomDirector } from './roomDirector';
 
@@ -73,7 +72,6 @@ export class CreepDirector {
     if (
       spawn.spawnCreep(CreepSetups[type][size], creepName, {
         memory: {
-          role: Role.Harvester,
           type,
           size,
           room: this.roomDirector.room.name,

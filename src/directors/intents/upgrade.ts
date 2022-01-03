@@ -18,8 +18,8 @@ export class UpgradeIntent extends Intent {
         return [
           {
             creepType: 'drone',
-            creepSize: 'standard',
-            creepCount: 3,
+            creepSize: 'double',
+            creepCount: 1,
           },
         ];
       case 5:
