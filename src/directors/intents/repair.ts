@@ -14,12 +14,12 @@ const StructureRepairConfig: {
     repairedThreshold: 1.0,
   },
   [STRUCTURE_RAMPART]: {
-    repairThreshold: 0.05,
-    repairedThreshold: 0.1,
+    repairThreshold: 0.0002,
+    repairedThreshold: 0.001,
   },
   [STRUCTURE_WALL]: {
-    repairThreshold: 0.0005,
-    repairedThreshold: 0.001,
+    repairThreshold: 0.0002,
+    repairedThreshold: 0.0005,
   },
   [STRUCTURE_CONTAINER]: {
     repairThreshold: 0.2,
