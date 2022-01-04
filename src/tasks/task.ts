@@ -1,41 +1,56 @@
+import { Kouhai } from "creeps/kouhai";
+
 export enum TaskType {
   Harvest = 1,
   Transport,
   Build,
   Upgrade,
   Repair,
+  Scout,
 }
 
-export abstract class Task<Target, SubTarget = void> {
+export abstract class Task<Target = void, SubTarget = void> {
   public abstract taskType: TaskType;
-  protected creep: Creep;
+  protected kouhai: Kouhai;
   protected targetId?: Id<Target>;
   protected subTargetId?: Id<SubTarget>;
 
-  public constructor(creep: Creep, targetId?: Id<Target>, subTargetId?: Id<SubTarget>) {
-    this.creep = creep;
+  public constructor(
+    kouhai: Kouhai,
+    targetId?: Id<Target>,
+    subTargetId?: Id<SubTarget>
+  ) {
+    this.kouhai = kouhai;
     this.targetId = targetId;
     this.subTargetId = subTargetId;
   }
 
   protected currentStoredEnergy(): number {
-    return this.creep.store[RESOURCE_ENERGY];
+    return this.kouhai.creep.store[RESOURCE_ENERGY];
   }
 
   protected getClosestSource(): Source | null {
-    return this.creep.pos.findClosestByPath(FIND_SOURCES);
+    return this.kouhai.creep.pos.findClosestByPath(FIND_SOURCES);
   }
 
-  protected getClosestContainerEnergy(): AnyStructure | undefined {
-    const container = this.creep.pos.findClosestByPath<
+  protected getClosestContainerEnergy(
+    allowReservedContainers = false
+  ): AnyStructure | undefined {
+    const container = this.kouhai.creep.pos.findClosestByPath<
       FIND_STRUCTURES,
       StructureContainer
     >(FIND_STRUCTURES, {
       filter: (structure) =>
         structure.structureType === STRUCTURE_CONTAINER &&
-        structure.store.energy > 0,
+        structure.store.energy > 0 &&
+        (!allowReservedContainers
+          ? structure.pos.findInRange(FIND_SOURCES, 3).length === 0 &&
+            structure.pos.findInRange(FIND_STRUCTURES, 3, {
+              filter: (s) => s.structureType === STRUCTURE_CONTROLLER,
+            }).length === 0
+          : true),
     });
-    const storage = this.creep.pos.findClosestByPath(FIND_STRUCTURES, {
+    const storage = this.kouhai.creep.pos.findClosestByPath(FIND_STRUCTURES, {
       filter: (structure) =>
         structure.structureType === STRUCTURE_STORAGE &&
         structure.store.energy > 0,
@@ -53,16 +68,16 @@ export abstract class Task<Target, SubTarget = void> {
   protected moveAndHarvest(
     source: Source | Mineral<MineralConstant> | Deposit
   ): void {
-    if (this.creep.harvest(source) === ERR_NOT_IN_RANGE) {
-      this.creep.travelTo(source);
+    if (this.kouhai.creep.harvest(source) === ERR_NOT_IN_RANGE) {
+      this.kouhai.creep.travelTo(source);
     }
   }
 
   protected moveAndCollectEnergy(targetStructure: AnyStructure): void {
     if (
-      this.creep.withdraw(targetStructure, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE
+      this.kouhai.creep.withdraw(targetStructure, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE
     ) {
-      this.creep.travelTo(targetStructure);
+      this.kouhai.creep.travelTo(targetStructure);
     }
   }
 

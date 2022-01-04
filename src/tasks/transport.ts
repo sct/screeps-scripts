@@ -1,3 +1,4 @@
+import { Kouhai } from 'creeps/kouhai';
 import { Task, TaskType } from './task';
 
 type StorableStructures =
@@ -14,32 +15,32 @@ export class TransportTask extends Task<
   private preferSubtarget = false;
 
   public constructor(
-    creep: Creep,
+    kouhai: Kouhai,
     targetId?: Id<StorableStructures>,
     subTargetId?: Id<StorableStructures>,
     preferSubTarget?: boolean
   ) {
-    super(creep, targetId, subTargetId);
+    super(kouhai, targetId, subTargetId);
     if (preferSubTarget) {
       this.preferSubtarget = preferSubTarget;
     }
   }
 
   public run(): void {
-    if (this.creep.memory.working && this.creep.store[RESOURCE_ENERGY] === 0) {
-      this.creep.memory.working = false;
-      this.creep.say('🔄 pick up');
+    if (this.kouhai.memory.working && this.kouhai.creep.store[RESOURCE_ENERGY] === 0) {
+      this.kouhai.memory.working = false;
+      this.kouhai.creep.say('🔄 pick up');
     }
     if (
-      !this.creep.memory.working &&
-      this.creep.store.getFreeCapacity() === 0
+      !this.kouhai.memory.working &&
+      this.kouhai.creep.store.getFreeCapacity() === 0
     ) {
-      this.creep.memory.working = true;
-      this.creep.say('🚧 transport');
+      this.kouhai.memory.working = true;
+      this.kouhai.creep.say('🚧 transport');
     }
 
-    if (this.creep.memory.working && this.subTargetId) {
-      const closestSpawn = this.creep.pos.findClosestByPath(FIND_STRUCTURES, {
+    if (this.kouhai.memory.working && this.subTargetId) {
+      const closestSpawn = this.kouhai.creep.pos.findClosestByPath(FIND_STRUCTURES, {
         filter: (structure) =>
           (structure.structureType === STRUCTURE_EXTENSION ||
             structure.structureType === STRUCTURE_SPAWN) &&
@@ -53,14 +54,14 @@ export class TransportTask extends Task<
 
       if (tryFirst) {
         if (
-          this.creep.transfer(tryFirst, RESOURCE_ENERGY) ===
+          this.kouhai.creep.transfer(tryFirst, RESOURCE_ENERGY) ===
           ERR_NOT_IN_RANGE
         ) {
-          this.creep.travelTo(tryFirst);
+          this.kouhai.creep.travelTo(tryFirst);
         }
       } else if (trySecond) {
-        if (this.creep.transfer(trySecond, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-          this.creep.travelTo(trySecond);
+        if (this.kouhai.creep.transfer(trySecond, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+          this.kouhai.creep.travelTo(trySecond);
         }
       }
     } else if (this.targetId) {

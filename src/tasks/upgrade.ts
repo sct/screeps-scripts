@@ -5,36 +5,36 @@ export class UpgradeTask extends Task<StructureController> {
   public taskType = TaskType.Upgrade;
 
   public run(): void {
-    if (this.creep.memory.working && this.creep.store[RESOURCE_ENERGY] === 0) {
-      this.creep.memory.working = false;
-      this.creep.say('🔄 harvest');
+    if (this.kouhai.memory.working && this.kouhai.creep.store[RESOURCE_ENERGY] === 0) {
+      this.kouhai.memory.working = false;
+      this.kouhai.creep.say('🔄');
     }
     if (
-      !this.creep.memory.working &&
-      this.creep.store.getFreeCapacity() === 0
+      !this.kouhai.memory.working &&
+      this.kouhai.creep.store.getFreeCapacity() === 0
     ) {
-      this.creep.memory.working = true;
-      this.creep.say('🚧 build');
+      this.kouhai.memory.working = true;
+      this.kouhai.creep.say('🚧');
     }
 
-    if (this.creep.memory.working && this.creep.room.controller) {
-      if (this.creep.room.controller.sign?.text !== DEFAULT_SIGN) {
+    if (this.kouhai.memory.working && this.kouhai.creep.room.controller) {
+      if (this.kouhai.creep.room.controller.sign?.text !== DEFAULT_SIGN) {
         if (
-          this.creep.signController(
-            this.creep.room.controller,
+          this.kouhai.creep.signController(
+            this.kouhai.creep.room.controller,
             DEFAULT_SIGN
           ) === ERR_NOT_IN_RANGE
         ) {
-          this.creep.moveTo(this.creep.room.controller);
+          this.kouhai.creep.moveTo(this.kouhai.creep.room.controller);
         }
       } else if (
-        this.creep.upgradeController(this.creep.room.controller) ===
+        this.kouhai.creep.upgradeController(this.kouhai.creep.room.controller) ===
         ERR_NOT_IN_RANGE
       ) {
-        this.creep.travelTo(this.creep.room.controller);
+        this.kouhai.creep.travelTo(this.kouhai.creep.room.controller);
       }
     } else {
-      const containerEnergy = this.getClosestContainerEnergy();
+      const containerEnergy = this.getClosestContainerEnergy(true);
       const source = this.getClosestSource();
       if (containerEnergy) {
         this.moveAndCollectEnergy(containerEnergy);

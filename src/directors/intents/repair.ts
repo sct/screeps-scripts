@@ -14,8 +14,8 @@ const StructureRepairConfig: {
     repairedThreshold: 1.0,
   },
   [STRUCTURE_RAMPART]: {
-    repairThreshold: 0.0002,
-    repairedThreshold: 0.001,
+    repairThreshold: 0.0025,
+    repairedThreshold: 0.005,
   },
   [STRUCTURE_WALL]: {
     repairThreshold: 0.0002,

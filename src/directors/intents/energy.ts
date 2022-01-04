@@ -8,10 +8,12 @@ export class EnergyIntent extends Intent {
 
   protected getAssignedCreeps(): CreepConfig[] {
     const harvesterCreeps = Object.values(
-      this.roomDirector.activeCreeps
+      this.roomDirector.shachou.creepDirector.getInactiveKouhaiInRoom(
+        this.roomDirector.room
+      )
     ).filter(
-      (creep) =>
-        creep.activeTask?.taskType === TaskType.Harvest || !creep.activeTask
+      (kouhai) =>
+        kouhai.activeTask?.taskType === TaskType.Harvest || !kouhai.activeTask
     );
     const emergency =
       harvesterCreeps.length < EnergyIntent.HARVESTER_EMERGENCY_THRESHOLD;
