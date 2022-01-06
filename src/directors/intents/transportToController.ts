@@ -47,6 +47,12 @@ export class TransportToControllerIntent extends Intent {
       };
     }
 
+    const link = storage.pos.findInRange<FIND_STRUCTURES, StructureLink>(
+      FIND_STRUCTURES,
+      2,
+      { filter: (structure) => structure.structureType === STRUCTURE_LINK }
+    )?.[0];
+
     const closestContainer = controller.pos.findInRange<
       FIND_STRUCTURES,
       StructureContainer
@@ -54,20 +60,23 @@ export class TransportToControllerIntent extends Intent {
       filter: (structure) => structure.structureType === STRUCTURE_CONTAINER,
     })?.[0];
 
-    if (!closestContainer) {
-      return {
-        shouldAct: false,
-        actions: [],
-      };
+    if (link) {
+      actions.push(
+        ...this.assignCreepsToTargets({
+          targets: [storage.id],
+          taskType: TaskType.Transport,
+          subTargetId: link.id,
+        })
+      );
+    } else if (closestContainer) {
+      actions.push(
+        ...this.assignCreepsToTargets({
+          targets: [storage.id],
+          taskType: TaskType.Transport,
+          subTargetId: closestContainer.id,
+        })
+      );
     }
-
-    actions.push(
-      ...this.assignCreepsToTargets(
-        [storage.id],
-        TaskType.Transport,
-        closestContainer.id
-      )
-    );
 
     return {
       shouldAct: actions.length > 0,

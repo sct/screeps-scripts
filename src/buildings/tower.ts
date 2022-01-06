@@ -2,8 +2,10 @@ export const runTower = (tower: StructureTower): void => {
   const target = tower.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
   const repairables = tower.room.find(FIND_STRUCTURES, {
     filter: (structure) =>
-      structure.hits < structure.hitsMax &&
-      structure.structureType === STRUCTURE_ROAD,
+      (structure.hits < structure.hitsMax &&
+        structure.structureType === STRUCTURE_ROAD) ||
+      (structure.structureType === STRUCTURE_RAMPART &&
+        structure.hits < 10000),
   });
 
   const lowestHits = repairables.reduce(
@@ -20,7 +22,7 @@ export const runTower = (tower: StructureTower): void => {
   if (target) {
     tower.attack(target);
   }
-  // else if (lowestHits) {
-  //   tower.repair(lowestHits);
-  // }
+  else if (lowestHits) {
+    tower.repair(lowestHits);
+  }
 };

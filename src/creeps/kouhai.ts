@@ -8,7 +8,6 @@ interface CreepMemory {
   working: boolean;
   activeTask?: ActiveTaskMemory | null | undefined;
   creepId: Id<Creep>;
-  data?: Record<string, unknown>;
 }
 
 interface ActiveTaskMemory {
@@ -16,6 +15,7 @@ interface ActiveTaskMemory {
   taskType: TaskType;
   targetId?: Id<any>;
   subTargetId?: Id<any>;
+  data: Record<string, unknown>;
 }
 
 export class Kouhai {
@@ -28,6 +28,7 @@ export class Kouhai {
       working: false,
       type: 'drone',
       size: 'default',
+      data: {},
     });
   }
 
@@ -65,5 +66,13 @@ export class Kouhai {
 
   public set activeTask(activeTask: ActiveTaskMemory | null | undefined) {
     this.memory.activeTask = activeTask;
+  }
+
+  public getTaskData<T>(): T {
+    return this.memory.activeTask?.data as T;
+  }
+
+  public setTaskData<T>(data: Partial<T>): void {
+    _.merge(this.memory.activeTask, { data });
   }
 }

@@ -1,45 +1,57 @@
 import { Kouhai } from 'creeps/kouhai';
 import { Task, TaskType } from './task';
 
+interface ScoutTaskData {
+  currentRoom: string;
+  lastRoom?: string;
+  exitX: number;
+  exitY: number;
+  exitName: string;
+}
+
 export class ScoutTask extends Task {
   public taskType: TaskType = TaskType.Scout;
 
   public constructor(kouhai: Kouhai) {
     super(kouhai);
-    _.defaults(this.kouhai.memory, {
-      data: {
-        currentRoom: kouhai.creep.room.name,
-      },
-    });
+    if (this.kouhai.memory.activeTask) {
+      _.defaults(this.kouhai.memory.activeTask, {
+        data: {
+          currentRoom: kouhai.creep.room.name,
+        },
+      });
+    }
+  }
+
+  public getTaskData(): ScoutTaskData {
+    return this.kouhai.getTaskData<ScoutTaskData>();
+  }
+
+  public setTaskData(data: Partial<ScoutTaskData>): void {
+    this.kouhai.setTaskData<ScoutTaskData>(data);
   }
 
   public run(): void {
-    if (this.kouhai.memory.data) {
-      this.kouhai.memory.data.currentRoom = this.kouhai.creep.room.name;
-    }
+    const taskData = this.getTaskData();
 
-    if (
-      this.kouhai.memory.data?.currentRoom !== this.kouhai.memory.data?.lastRoom
-    ) {
+    taskData.currentRoom = this.kouhai.creep.room.name;
+    this.setTaskData({ currentRoom: this.kouhai.creep.room.name });
+
+    if (taskData.currentRoom !== taskData.lastRoom) {
       const exits = this.kouhai.creep.room.find(FIND_EXIT);
 
       const randomExit = exits[Math.floor(Math.random() * exits.length)];
-      if (!this.kouhai.memory.data) {
-        this.kouhai.memory.data = {};
-      }
-      this.kouhai.memory.data.exitX = randomExit.x;
-      this.kouhai.memory.data.exitY = randomExit.y;
-      this.kouhai.memory.data.exitName = randomExit.roomName;
-      this.kouhai.memory.data.lastRoom = this.kouhai.creep.room.name;
+
+      taskData.exitX = randomExit.x;
+      taskData.exitY = randomExit.y;
+      taskData.exitName = randomExit.roomName;
+      taskData.lastRoom = this.kouhai.creep.room.name;
+      this.kouhai.setTaskData<ScoutTaskData>(taskData);
     }
-    if (
-      this.kouhai.memory?.data?.exitX as number >= 0 &&
-      this.kouhai.memory?.data?.exitY as number >= 0 &&
-      this.kouhai.memory?.data?.exitName
-    ) {
-      const x = this.kouhai.memory?.data?.exitX as number;
-      const y = this.kouhai.memory?.data?.exitY as number;
-      const roomName = this.kouhai.memory?.data?.exitName as string;
+    if (taskData.exitX >= 0 && taskData.exitY >= 0 && taskData.exitName) {
+      const x = taskData.exitX;
+      const y = taskData.exitY;
+      const roomName = taskData.exitName;
       const exitPosition = new RoomPosition(x, y, roomName);
       this.kouhai.creep.travelTo(exitPosition);
     }

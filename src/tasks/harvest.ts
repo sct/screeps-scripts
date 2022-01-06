@@ -9,20 +9,38 @@ export class HarvestTask extends Task<Source> {
   }
 
   public transferToStorage(preferStorage = false): void {
-    const closestSpawn = this.kouhai.creep.pos.findClosestByPath(FIND_STRUCTURES, {
-      filter: (structure) =>
-        (structure.structureType === STRUCTURE_EXTENSION ||
-          structure.structureType === STRUCTURE_SPAWN) &&
-        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0,
-    });
+    if (this.kouhai.memory.room !== this.kouhai.creep.room.name) {
+      const exitDir = this.kouhai.creep.room.findExitTo(
+        this.kouhai.memory.room
+      );
+      if (exitDir !== -2 && exitDir !== -10) {
+        const exit = this.kouhai.creep.pos.findClosestByRange(exitDir);
+        if (exit) {
+          this.kouhai.creep.travelTo(exit);
+        }
+      }
+      return;
+    }
+    const closestSpawn = this.kouhai.creep.pos.findClosestByPath(
+      FIND_STRUCTURES,
+      {
+        filter: (structure) =>
+          (structure.structureType === STRUCTURE_EXTENSION ||
+            structure.structureType === STRUCTURE_SPAWN) &&
+          structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0,
+      }
+    );
 
-    const closestStorage = this.kouhai.creep.pos.findClosestByPath(FIND_STRUCTURES, {
-      filter: (structure) =>
-        (structure.structureType === STRUCTURE_CONTAINER ||
-          structure.structureType === STRUCTURE_STORAGE ||
-          structure.structureType === STRUCTURE_TOWER) &&
-        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0,
-    });
+    const closestStorage = this.kouhai.creep.pos.findClosestByPath(
+      FIND_STRUCTURES,
+      {
+        filter: (structure) =>
+          (structure.structureType === STRUCTURE_CONTAINER ||
+            structure.structureType === STRUCTURE_STORAGE ||
+            structure.structureType === STRUCTURE_TOWER) &&
+          structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0,
+      }
+    );
 
     const tryFirst = preferStorage ? closestStorage : closestSpawn;
     const trySecond = preferStorage ? closestSpawn : closestStorage;
@@ -33,7 +51,8 @@ export class HarvestTask extends Task<Source> {
       this.kouhai.creep.travelTo(tryFirst);
     } else if (
       trySecond &&
-      this.kouhai.creep.transfer(trySecond, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE
+      this.kouhai.creep.transfer(trySecond, RESOURCE_ENERGY) ===
+        ERR_NOT_IN_RANGE
     ) {
       this.kouhai.creep.travelTo(trySecond);
     }
@@ -68,14 +87,14 @@ export class HarvestTask extends Task<Source> {
         }
       );
 
-      const transportersAvailable = Object.values(
-        Game.creeps
-      ).map(creep => new Kouhai(creep)).some(
-        (kouhai) =>
-          kouhai.creep.room.name === this.kouhai.creep.room.name &&
-          kouhai.activeTask?.taskType === TaskType.Transport &&
-          kouhai.activeTask?.taskKey.startsWith('transportToStorage')
-      );
+      const transportersAvailable = Object.values(Game.creeps)
+        .map((creep) => new Kouhai(creep))
+        .some(
+          (kouhai) =>
+            kouhai.creep.room.name === this.kouhai.creep.room.name &&
+            kouhai.activeTask?.taskType === TaskType.Transport &&
+            kouhai.activeTask?.taskKey.startsWith('transportToStorage')
+        );
       const preferStorage =
         (this.kouhai.creep.room.controller?.level ?? 0) >= 4 &&
         !!containersInRange?.[0] &&

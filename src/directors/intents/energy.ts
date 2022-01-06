@@ -15,8 +15,7 @@ export class EnergyIntent extends Intent {
       (kouhai) =>
         kouhai.activeTask?.taskType === TaskType.Harvest || !kouhai.activeTask
     );
-    const emergency =
-      harvesterCreeps.length < EnergyIntent.HARVESTER_EMERGENCY_THRESHOLD;
+    const emergency = false;
     switch (this.roomDirector.memory.rcl) {
       case 8:
       case 7:
@@ -101,10 +100,10 @@ export class EnergyIntent extends Intent {
     const actions: IntentAction[] = [];
 
     actions.push(
-      ...this.assignCreepsToTargets<Source>(
-        this.roomDirector.sources,
-        TaskType.Harvest
-      )
+      ...this.assignCreepsToTargets<Source>({
+        targets: this.roomDirector.sources,
+        taskType: TaskType.Harvest,
+      })
     );
 
     return {

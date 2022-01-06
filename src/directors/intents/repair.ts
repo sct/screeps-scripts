@@ -24,7 +24,7 @@ const StructureRepairConfig: {
   [STRUCTURE_CONTAINER]: {
     repairThreshold: 0.2,
     repairedThreshold: 0.4,
-  }
+  },
 };
 
 export class RepairIntent extends Intent {
@@ -88,10 +88,10 @@ export class RepairIntent extends Intent {
     }
 
     actions.push(
-      ...this.assignCreepsToTargets<AnyStructure>(
-        damagedStructures.map((structure) => structure.id),
-        TaskType.Repair
-      )
+      ...this.assignCreepsToTargets<AnyStructure>({
+        targets: damagedStructures.map((structure) => structure.id),
+        taskType: TaskType.Repair,
+      })
     );
 
     return {

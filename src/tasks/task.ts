@@ -1,4 +1,4 @@
-import { Kouhai } from "creeps/kouhai";
+import { Kouhai } from 'creeps/kouhai';
 
 export enum TaskType {
   Harvest = 1,
@@ -41,7 +41,8 @@ export abstract class Task<Target = void, SubTarget = void> {
       StructureContainer
     >(FIND_STRUCTURES, {
       filter: (structure) =>
-        structure.structureType === STRUCTURE_CONTAINER &&
+        (structure.structureType === STRUCTURE_CONTAINER ||
+          structure.structureType === STRUCTURE_LINK) &&
         structure.store.energy > 0 &&
         (!allowReservedContainers
           ? structure.pos.findInRange(FIND_SOURCES, 3).length === 0 &&
@@ -75,7 +76,8 @@ export abstract class Task<Target = void, SubTarget = void> {
 
   protected moveAndCollectEnergy(targetStructure: AnyStructure): void {
     if (
-      this.kouhai.creep.withdraw(targetStructure, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE
+      this.kouhai.creep.withdraw(targetStructure, RESOURCE_ENERGY) ===
+      ERR_NOT_IN_RANGE
     ) {
       this.kouhai.creep.travelTo(targetStructure);
     }

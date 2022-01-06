@@ -1,6 +1,6 @@
-import { runTower } from "buildings/tower";
-import { CreepDirector } from "directors/creepDirector";
-import { RoomDirector } from "directors/roomDirector";
+import { runTower } from 'buildings/tower';
+import { CreepDirector } from 'directors/creepDirector';
+import { RoomDirector } from 'directors/roomDirector';
 
 export class Shachou {
   public creepDirector: CreepDirector;

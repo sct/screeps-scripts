@@ -12,81 +12,103 @@ import { IntentAction } from './intents/intent';
 import { RoomDirector } from './roomDirector';
 
 export type CreepType = 'drone' | 'transport' | 'scout';
-export type CreepSize = 'emergency' | 'default' | 'standard' | 'double';
+export type CreepSize = 'emergency' | 'default' | 'standard' | 'double' | 'distance';
 
-const CreepSetups: Record<CreepType, { [K in CreepSize]: BodyPartConstant[] }> =
-  {
-    drone: {
-      emergency: [WORK, CARRY, MOVE],
-      default: [WORK, WORK, CARRY, MOVE],
-      standard: [WORK, WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE],
-      double: [
-        WORK,
-        WORK,
-        WORK,
-        WORK,
-        WORK,
-        WORK,
-        WORK,
-        WORK,
-        WORK,
-        WORK,
-        CARRY,
-        CARRY,
-        MOVE,
-        MOVE,
-        MOVE,
-      ],
-    },
-    transport: {
-      emergency: [CARRY, CARRY, CARRY, MOVE, MOVE],
-      default: [CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE],
-      standard: [
-        CARRY,
-        CARRY,
-        CARRY,
-        CARRY,
-        CARRY,
-        CARRY,
-        CARRY,
-        MOVE,
-        MOVE,
-        MOVE,
-        MOVE,
-        MOVE,
-      ],
-      double: [
-        CARRY,
-        CARRY,
-        CARRY,
-        CARRY,
-        CARRY,
-        CARRY,
-        CARRY,
-        CARRY,
-        CARRY,
-        CARRY,
-        CARRY,
-        CARRY,
-        CARRY,
-        CARRY,
-        MOVE,
-        MOVE,
-        MOVE,
-        MOVE,
-        MOVE,
-        MOVE,
-        MOVE,
-        MOVE,
-      ],
-    },
-    scout: {
-      emergency: [MOVE],
-      default: [MOVE],
-      standard: [MOVE, MOVE],
-      double: [MOVE, MOVE, MOVE, MOVE],
-    },
-  };
+const CreepSetups: Record<
+  CreepType,
+  { [K in CreepSize]?: BodyPartConstant[] }
+> = {
+  drone: {
+    emergency: [WORK, CARRY, MOVE],
+    default: [WORK, WORK, CARRY, MOVE],
+    standard: [WORK, WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE],
+    double: [
+      WORK,
+      WORK,
+      WORK,
+      WORK,
+      WORK,
+      WORK,
+      WORK,
+      WORK,
+      WORK,
+      WORK,
+      CARRY,
+      CARRY,
+      MOVE,
+      MOVE,
+      MOVE,
+    ],
+    distance: [
+      WORK,
+      WORK,
+      MOVE,
+      MOVE,
+      MOVE,
+      MOVE,
+      MOVE,
+      MOVE,
+      MOVE,
+      CARRY,
+      CARRY,
+      CARRY,
+      CARRY,
+      CARRY,
+      CARRY,
+      CARRY,
+      CARRY,
+      CARRY,
+    ],
+  },
+  transport: {
+    emergency: [CARRY, CARRY, CARRY, MOVE, MOVE],
+    default: [CARRY, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE],
+    standard: [
+      CARRY,
+      CARRY,
+      CARRY,
+      CARRY,
+      CARRY,
+      CARRY,
+      CARRY,
+      MOVE,
+      MOVE,
+      MOVE,
+      MOVE,
+      MOVE,
+    ],
+    double: [
+      CARRY,
+      CARRY,
+      CARRY,
+      CARRY,
+      CARRY,
+      CARRY,
+      CARRY,
+      CARRY,
+      CARRY,
+      CARRY,
+      CARRY,
+      CARRY,
+      CARRY,
+      CARRY,
+      MOVE,
+      MOVE,
+      MOVE,
+      MOVE,
+      MOVE,
+      MOVE,
+      MOVE,
+      MOVE,
+    ],
+  },
+  scout: {
+    emergency: [MOVE],
+    default: [MOVE],
+    standard: [MOVE, MOVE],
+    double: [MOVE, MOVE, MOVE, MOVE],
+  },
+};
 
 export class CreepDirector {
   private shachou: Shachou;
@@ -102,8 +124,10 @@ export class CreepDirector {
     size: CreepSize = 'default'
   ): void {
     const creepName = `${type}-${Game.time}`;
+    const creepSetup = CreepSetups[type][size];
     if (
-      spawn.spawnCreep(CreepSetups[type][size], creepName, {
+      creepSetup &&
+      spawn.spawnCreep(creepSetup, creepName, {
         memory: {
           type,
           size,
@@ -113,9 +137,10 @@ export class CreepDirector {
       }) === OK
     ) {
       log.info(
-        `Spawning new creep. Name: ${creepName} Type: ${type} Cost: ${CreepSetups[
-          type
-        ][size].reduce((acc, v) => acc + BODYPART_COST[v], 0)}`,
+        `Spawning new creep. Name: ${creepName} Type: ${type} Cost: ${creepSetup.reduce(
+          (acc, v) => acc + BODYPART_COST[v],
+          0
+        )}`,
         {
           label: 'Creep Director',
         }
@@ -178,6 +203,7 @@ export class CreepDirector {
               taskType: action.taskType,
               targetId: action.targetId,
               subTargetId: action.subTargetId,
+              data: {},
             };
             log.debug('Assigned creep', {
               key: unassignedCreep.activeTask.taskKey,

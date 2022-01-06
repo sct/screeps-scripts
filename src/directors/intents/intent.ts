@@ -21,6 +21,7 @@ export interface IntentAction {
   totalCreeps: number;
   targetId?: Id<any>;
   subTargetId?: Id<any>;
+  targetRoom?: string;
 }
 
 export interface IntentResponse {
@@ -53,11 +54,17 @@ export abstract class Intent {
     );
   }
 
-  protected assignCreepsToTargets<T>(
-    targets: Id<T>[],
-    taskType: TaskType,
-    subTargetId?: Id<any>
-  ): IntentAction[] {
+  protected assignCreepsToTargets<T>({
+    targets,
+    taskType,
+    subTargetId,
+    targetRoom,
+  }: {
+    targets: Id<T>[];
+    taskType: TaskType;
+    subTargetId?: Id<any>;
+    targetRoom?: string;
+  }): IntentAction[] {
     const actions: IntentAction[] = [];
 
     const availableSources = targets.reduce(
@@ -125,6 +132,7 @@ export abstract class Intent {
             creeps: source,
             totalCreeps,
             subTargetId,
+            targetRoom,
           };
         })
     );

@@ -30,7 +30,7 @@ export class BuildTask extends Task<ConstructionSite> {
         constructionSite &&
         this.kouhai.creep.build(constructionSite) === ERR_NOT_IN_RANGE
       ) {
-        this.kouhai.creep.travelTo(this.kouhai.creep.room.find(FIND_CONSTRUCTION_SITES)[0]);
+        this.kouhai.creep.moveTo(constructionSite);
       }
     } else {
       const containerEnergy = this.getClosestContainerEnergy();

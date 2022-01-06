@@ -27,7 +27,10 @@ export class TransportTask extends Task<
   }
 
   public run(): void {
-    if (this.kouhai.memory.working && this.kouhai.creep.store[RESOURCE_ENERGY] === 0) {
+    if (
+      this.kouhai.memory.working &&
+      this.kouhai.creep.store[RESOURCE_ENERGY] === 0
+    ) {
       this.kouhai.memory.working = false;
       this.kouhai.creep.say('🔄 pick up');
     }
@@ -40,17 +43,21 @@ export class TransportTask extends Task<
     }
 
     if (this.kouhai.memory.working && this.subTargetId) {
-      const closestSpawn = this.kouhai.creep.pos.findClosestByPath(FIND_STRUCTURES, {
-        filter: (structure) =>
-          (structure.structureType === STRUCTURE_EXTENSION ||
-            structure.structureType === STRUCTURE_SPAWN) &&
-          structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0,
-      });
+      const closestSpawnOrTower = this.kouhai.creep.pos.findClosestByPath(
+        FIND_STRUCTURES,
+        {
+          filter: (structure) =>
+            (structure.structureType === STRUCTURE_EXTENSION ||
+              structure.structureType === STRUCTURE_SPAWN ||
+              structure.structureType === STRUCTURE_TOWER) &&
+            structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0,
+        }
+      );
 
       const target = Game.getObjectById(this.subTargetId);
 
-      const tryFirst = this.preferSubtarget ? target : closestSpawn;
-      const trySecond = this.preferSubtarget ? closestSpawn : target;
+      const tryFirst = this.preferSubtarget ? target : closestSpawnOrTower;
+      const trySecond = this.preferSubtarget ? closestSpawnOrTower : target;
 
       if (tryFirst) {
         if (
@@ -60,7 +67,10 @@ export class TransportTask extends Task<
           this.kouhai.creep.travelTo(tryFirst);
         }
       } else if (trySecond) {
-        if (this.kouhai.creep.transfer(trySecond, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+        if (
+          this.kouhai.creep.transfer(trySecond, RESOURCE_ENERGY) ===
+          ERR_NOT_IN_RANGE
+        ) {
           this.kouhai.creep.travelTo(trySecond);
         }
       }

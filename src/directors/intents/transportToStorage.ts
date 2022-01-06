@@ -67,11 +67,11 @@ export class TransportToStorageIntent extends Intent {
     }
 
     actions.push(
-      ...this.assignCreepsToTargets<StructureContainer>(
-        containers.map((c) => c.id),
-        TaskType.Transport,
-        storage.id
-      )
+      ...this.assignCreepsToTargets<StructureContainer>({
+        targets: containers.map((c) => c.id),
+        taskType: TaskType.Transport,
+        subTargetId: storage.id,
+      })
     );
 
     return {
