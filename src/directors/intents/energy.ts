@@ -101,7 +101,9 @@ export class EnergyIntent extends Intent {
 
     actions.push(
       ...this.assignCreepsToTargets<Source>({
-        targets: this.roomDirector.sources,
+        targets: this.roomDirector.sources.map((id) => ({
+          main: id,
+        })),
         taskType: TaskType.Harvest,
       })
     );

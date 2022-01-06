@@ -3,12 +3,19 @@ import { Task, TaskType } from './task';
 
 export class HarvestTask extends Task<Source> {
   public taskType = TaskType.Harvest;
+  protected remotePosition: RoomPosition | undefined;
 
-  public constructor(kouhai: Kouhai, targetId?: Id<Source>) {
+  public constructor(
+    kouhai: Kouhai,
+    targetId?: Id<Source>,
+    remotePosition?: RoomPosition
+  ) {
     super(kouhai, targetId);
+    this.remotePosition = remotePosition;
   }
 
   public transferToStorage(preferStorage = false): void {
+    const isMining = this.kouhai.memory.activeTask?.taskKey.startsWith('mine');
     if (this.kouhai.memory.room !== this.kouhai.creep.room.name) {
       const exitDir = this.kouhai.creep.room.findExitTo(
         this.kouhai.memory.room
@@ -35,10 +42,15 @@ export class HarvestTask extends Task<Source> {
       FIND_STRUCTURES,
       {
         filter: (structure) =>
-          (structure.structureType === STRUCTURE_CONTAINER ||
-            structure.structureType === STRUCTURE_STORAGE ||
-            structure.structureType === STRUCTURE_TOWER) &&
-          structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0,
+          isMining
+            ? (structure.structureType === STRUCTURE_CONTAINER ||
+                structure.structureType === STRUCTURE_TERMINAL) &&
+              structure.store.getFreeCapacity(RESOURCE_EXTRACT) > 0
+            : (structure.structureType === STRUCTURE_CONTAINER ||
+                structure.structureType === STRUCTURE_STORAGE ||
+                structure.structureType === STRUCTURE_TOWER) &&
+              structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0 &&
+              structure.pos.findInRange(FIND_MINERALS, 3).length === 0,
       }
     );
 
@@ -46,20 +58,25 @@ export class HarvestTask extends Task<Source> {
     const trySecond = preferStorage ? closestSpawn : closestStorage;
     if (
       tryFirst &&
-      this.kouhai.creep.transfer(tryFirst, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE
+      this.kouhai.creep.transfer(
+        tryFirst,
+        isMining ? RESOURCE_KEANIUM : RESOURCE_ENERGY
+      ) === ERR_NOT_IN_RANGE
     ) {
       this.kouhai.creep.travelTo(tryFirst);
     } else if (
       trySecond &&
-      this.kouhai.creep.transfer(trySecond, RESOURCE_ENERGY) ===
-        ERR_NOT_IN_RANGE
+      this.kouhai.creep.transfer(
+        trySecond,
+        isMining ? RESOURCE_KEANIUM : RESOURCE_ENERGY
+      ) === ERR_NOT_IN_RANGE
     ) {
       this.kouhai.creep.travelTo(trySecond);
     }
   }
 
   public run(): void {
-    if (this.kouhai.memory.working && this.currentStoredEnergy() === 0) {
+    if (this.kouhai.memory.working && this.currentStore() === 0) {
       this.kouhai.memory.working = false;
       this.kouhai.creep.say('🔄 harvest');
     }
@@ -104,6 +121,9 @@ export class HarvestTask extends Task<Source> {
     } else {
       if (targetSource) {
         this.moveAndHarvest(targetSource);
+      } else if (this.remotePosition) {
+        // try to move to remote position
+        this.kouhai.creep.travelTo(this.remotePosition);
       }
     }
   }

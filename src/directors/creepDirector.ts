@@ -1,8 +1,10 @@
 import { Kouhai } from 'creeps/kouhai';
 import { Shachou } from 'shachou';
 import { BuildTask } from 'tasks/build';
+import { DefendTask } from 'tasks/defend';
 import { HarvestTask } from 'tasks/harvest';
 import { RepairTask } from 'tasks/repair';
+import { ReserveTask } from 'tasks/reserve';
 import { ScoutTask } from 'tasks/scout';
 import { TaskType } from 'tasks/task';
 import { TransportTask } from 'tasks/transport';
@@ -11,8 +13,18 @@ import log from 'utils/logger';
 import { IntentAction } from './intents/intent';
 import { RoomDirector } from './roomDirector';
 
-export type CreepType = 'drone' | 'transport' | 'scout';
-export type CreepSize = 'emergency' | 'default' | 'standard' | 'double' | 'distance';
+export type CreepType =
+  | 'drone'
+  | 'transport'
+  | 'scout'
+  | 'reserver'
+  | 'defender';
+export type CreepSize =
+  | 'emergency'
+  | 'default'
+  | 'standard'
+  | 'double'
+  | 'distance';
 
 const CreepSetups: Record<
   CreepType,
@@ -107,6 +119,36 @@ const CreepSetups: Record<
     default: [MOVE],
     standard: [MOVE, MOVE],
     double: [MOVE, MOVE, MOVE, MOVE],
+  },
+  reserver: {
+    default: [CLAIM, CLAIM, MOVE, MOVE, MOVE],
+  },
+  defender: {
+    default: [
+      MOVE,
+      MOVE,
+      MOVE,
+      MOVE,
+      MOVE,
+      MOVE,
+      MOVE,
+      MOVE,
+      MOVE,
+      MOVE,
+      ATTACK,
+      ATTACK,
+      ATTACK,
+      ATTACK,
+      ATTACK,
+      HEAL,
+      TOUGH,
+      TOUGH,
+      TOUGH,
+      TOUGH,
+      TOUGH,
+      TOUGH,
+      TOUGH,
+    ],
   },
 };
 
@@ -203,7 +245,8 @@ export class CreepDirector {
               taskType: action.taskType,
               targetId: action.targetId,
               subTargetId: action.subTargetId,
-              data: {},
+              targetRoom: action.targetRoom,
+              data: action.data ?? {},
             };
             log.debug('Assigned creep', {
               key: unassignedCreep.activeTask.taskKey,
@@ -272,11 +315,31 @@ export class CreepDirector {
           task.run();
           break;
         }
+        case TaskType.Reserve: {
+          const task = new ReserveTask(activeKouhai);
+          task.run();
+          break;
+        }
+        case TaskType.Defend: {
+          const task = new DefendTask(activeKouhai);
+          task.run();
+          break;
+        }
+        case TaskType.Mine:
         case TaskType.Harvest:
         default: {
           const task = new HarvestTask(
             activeKouhai,
-            activeKouhai.activeTask?.targetId
+            activeKouhai.activeTask?.targetId,
+            activeKouhai.activeTask?.data?.x &&
+            activeKouhai.activeTask?.data?.y &&
+            activeKouhai.activeTask?.targetRoom
+              ? new RoomPosition(
+                  activeKouhai.activeTask.data.x as number,
+                  activeKouhai.activeTask.data.y as number,
+                  activeKouhai.activeTask.targetRoom
+                )
+              : undefined
           );
           task.run();
           break;

@@ -1,5 +1,7 @@
 import { Kouhai } from 'creeps/kouhai';
 
+export const DEFAULT_SIGN = 'All hail the our new overlord. sct.';
+
 export enum TaskType {
   Harvest = 1,
   Transport,
@@ -7,6 +9,9 @@ export enum TaskType {
   Upgrade,
   Repair,
   Scout,
+  Mine,
+  Reserve,
+  Defend,
 }
 
 export abstract class Task<Target = void, SubTarget = void> {
@@ -25,8 +30,8 @@ export abstract class Task<Target = void, SubTarget = void> {
     this.subTargetId = subTargetId;
   }
 
-  protected currentStoredEnergy(): number {
-    return this.kouhai.creep.store[RESOURCE_ENERGY];
+  protected currentStore(): number {
+    return this.kouhai.creep.store.getUsedCapacity();
   }
 
   protected getClosestSource(): Source | null {
@@ -80,6 +85,18 @@ export abstract class Task<Target = void, SubTarget = void> {
       ERR_NOT_IN_RANGE
     ) {
       this.kouhai.creep.travelTo(targetStructure);
+    }
+  }
+
+  protected signController(): void {
+    if (
+      this.kouhai.creep.room.controller &&
+      this.kouhai.creep.signController(
+        this.kouhai.creep.room.controller,
+        DEFAULT_SIGN
+      ) === ERR_NOT_IN_RANGE
+    ) {
+      this.kouhai.creep.moveTo(this.kouhai.creep.room.controller);
     }
   }
 

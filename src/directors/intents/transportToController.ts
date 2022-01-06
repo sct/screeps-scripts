@@ -63,17 +63,15 @@ export class TransportToControllerIntent extends Intent {
     if (link) {
       actions.push(
         ...this.assignCreepsToTargets({
-          targets: [storage.id],
+          targets: [{ main: storage.id, sub: link.id }],
           taskType: TaskType.Transport,
-          subTargetId: link.id,
         })
       );
     } else if (closestContainer) {
       actions.push(
         ...this.assignCreepsToTargets({
-          targets: [storage.id],
+          targets: [{ main: storage.id, sub: closestContainer.id }],
           taskType: TaskType.Transport,
-          subTargetId: closestContainer.id,
         })
       );
     }

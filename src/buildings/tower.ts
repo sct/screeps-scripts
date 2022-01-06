@@ -22,7 +22,7 @@ export const runTower = (tower: StructureTower): void => {
   if (target) {
     tower.attack(target);
   }
-  else if (lowestHits) {
-    tower.repair(lowestHits);
-  }
+  // else if (lowestHits) {
+  //   tower.repair(lowestHits);
+  // }
 };

@@ -1,9 +1,12 @@
+/* eslint-disable no-fallthrough */
 import { Shachou } from 'shachou';
 import { BuildIntent } from './intents/build';
 import { EnergyIntent } from './intents/energy';
 import { Intent, IntentAction } from './intents/intent';
+import { MineIntent } from './intents/mine';
 import { RemoteEnergyIntent } from './intents/remoteEnergy';
 import { RepairIntent } from './intents/repair';
+import { ReserveIntent } from './intents/reserve';
 import { ScoutIntent } from './intents/scout';
 import { TransportToControllerIntent } from './intents/transportToController';
 import { TransportToStorageIntent } from './intents/transportToStorage';
@@ -22,12 +25,22 @@ export interface RoomDirectorMemory {
   availableStoredEnergy: number;
   spawnCapacity: number;
   spawns: Id<StructureSpawn>[];
+  containers: Id<StructureContainer>[];
   availableSources: Id<Source>[];
   sources: Record<Id<Source>, SourceConfig>;
   rcl: number;
   roomController?: Id<StructureController>;
   activeIntentActions: IntentAction[];
-  remoteSources: { id: Id<Source>; distance: number; room: string }[];
+  remoteSources: {
+    id: Id<Source>;
+    distance: number;
+    room: string;
+    x: number;
+    y: number;
+  }[];
+  expansionRooms: {
+    roomName: string;
+  }[];
 }
 
 const RoomMemoryDefaults: RoomDirectorMemory = {
@@ -42,6 +55,8 @@ const RoomMemoryDefaults: RoomDirectorMemory = {
   spawnCapacity: 0,
   spawns: [],
   remoteSources: [],
+  containers: [],
+  expansionRooms: [],
 };
 
 export class RoomDirector {
@@ -88,6 +103,12 @@ export class RoomDirector {
         availableStoredEnergy,
         spawnCapacity,
         spawns: this.room.find(FIND_MY_SPAWNS).map((spawn) => spawn.id),
+        containers: this.room
+          .find<FIND_STRUCTURES, StructureContainer>(FIND_STRUCTURES, {
+            filter: (structure) =>
+              structure.structureType === STRUCTURE_CONTAINER,
+          })
+          .map((s) => s.id),
         availableSources: this.room
           .find(FIND_SOURCES)
           .map((source) => source.id),
@@ -104,6 +125,8 @@ export class RoomDirector {
 
       if (this.room.controller?.my) {
         this.evaluateRemoteMining();
+        this.autoConstruction();
+        this.evaluateExpansion();
       }
     }
   }
@@ -140,6 +163,28 @@ export class RoomDirector {
     }, {} as Record<Id<Source>, SourceConfig>);
   }
 
+  private evaluateExpansion(): void {
+    // Lets keep it simple and only try to expand to closest 3 sources.
+    // If later on we expand to a room with a source not in this, we can still trigger
+    // remote mining on expansions rooms!
+    const remoteSources = this.memory.remoteSources
+      // Filter out rooms that dont have controllers
+      .filter(
+        (rs) => (Memory.rooms[rs.room] as RoomDirectorMemory).roomController
+      )
+      .slice(0, 3);
+
+    if (remoteSources.length === 0) {
+      return;
+    }
+
+    this.memory.expansionRooms = _.uniq(remoteSources, 'room').map(
+      (source) => ({
+        roomName: source.room,
+      })
+    );
+  }
+
   /**
    * Checks room memory data (if available) and returns the available extension sources (in order of distance)
    */
@@ -165,6 +210,8 @@ export class RoomDirector {
             return {
               id: sourceData.id,
               distance,
+              x: sourceData.x,
+              y: sourceData.y,
               room: exit,
             };
           })
@@ -184,45 +231,70 @@ export class RoomDirector {
       case 8:
       case 7:
       case 6:
+        intents.push(new MineIntent({ roomDirector: this }));
       case 5:
       case 4:
         intents.push(
-          new EnergyIntent({ roomDirector: this }),
-          new UpgradeIntent({ roomDirector: this }),
-          new TransportToStorageIntent({ roomDirector: this }),
           new TransportToControllerIntent({ roomDirector: this }),
-          new BuildIntent({ roomDirector: this }),
-          new RepairIntent({ roomDirector: this }),
-          new ScoutIntent({ roomDirector: this }),
-          new RemoteEnergyIntent({ roomDirector: this })
+          new TransportToStorageIntent({ roomDirector: this })
         );
-        break;
       case 3:
         intents.push(
-          new EnergyIntent({ roomDirector: this }),
-          new UpgradeIntent({ roomDirector: this }),
-          new BuildIntent({ roomDirector: this }),
-          new RepairIntent({ roomDirector: this }),
-          new ScoutIntent({ roomDirector: this }),
-          new RemoteEnergyIntent({ roomDirector: this })
+          new ReserveIntent({ roomDirector: this }),
+          new RemoteEnergyIntent({ roomDirector: this }),
+          new ScoutIntent({ roomDirector: this })
         );
-        break;
       case 2:
         intents.push(
-          new EnergyIntent({ roomDirector: this }),
-          new UpgradeIntent({ roomDirector: this }),
-          new BuildIntent({ roomDirector: this }),
-          new RepairIntent({ roomDirector: this })
+          new RepairIntent({ roomDirector: this }),
+          new BuildIntent({ roomDirector: this })
         );
-        break;
       default:
         intents.push(
-          new EnergyIntent({ roomDirector: this }),
-          new UpgradeIntent({ roomDirector: this })
+          new UpgradeIntent({ roomDirector: this }),
+          new EnergyIntent({ roomDirector: this })
         );
     }
 
-    this.intents = intents;
+    this.intents = intents.reverse();
+  }
+
+  private autoConstruction() {
+    // Build container near extractor
+    const extractor = this.room.find<FIND_STRUCTURES, StructureExtractor>(
+      FIND_STRUCTURES,
+      {
+        filter: (structure) => structure.structureType === STRUCTURE_EXTRACTOR,
+      }
+    )?.[0];
+
+    if (extractor && this.memory.containers.length < 5) {
+      const structures = this.room.lookAtArea(
+        extractor.pos.y - 1,
+        extractor.pos.x - 1,
+        extractor.pos.y + 1,
+        extractor.pos.x + 1,
+        true
+      );
+
+      if (
+        !structures.some(
+          (s) =>
+            s.structure instanceof StructureContainer ||
+            s.constructionSite?.structureType === STRUCTURE_CONTAINER
+        )
+      ) {
+        let startedConstruction = false;
+        extractor.around().forEach(({ x, y }) => {
+          if (
+            !startedConstruction &&
+            this.room.createConstructionSite(x, y, STRUCTURE_CONTAINER) === OK
+          ) {
+            startedConstruction = true;
+          }
+        });
+      }
+    }
   }
 
   public getAvailableStoredEnergy(): number {

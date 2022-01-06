@@ -9,6 +9,7 @@ interface IntentSetup {
 export interface CreepConfig {
   creepType: CreepType;
   creepSize?: CreepSize;
+  renew?: boolean;
   creepCount: number;
 }
 
@@ -22,6 +23,7 @@ export interface IntentAction {
   targetId?: Id<any>;
   subTargetId?: Id<any>;
   targetRoom?: string;
+  data?: Record<string, unknown>;
 }
 
 export interface IntentResponse {
@@ -54,56 +56,57 @@ export abstract class Intent {
     );
   }
 
-  protected assignCreepsToTargets<T>({
+  protected assignCreepsToTargets<T, ST = void>({
     targets,
     taskType,
-    subTargetId,
-    targetRoom,
   }: {
-    targets: Id<T>[];
+    targets: {
+      main: Id<T>;
+      sub?: Id<ST>;
+      targetRoom?: string;
+      data?: Record<string, unknown>;
+    }[];
     taskType: TaskType;
-    subTargetId?: Id<any>;
-    targetRoom?: string;
   }): IntentAction[] {
     const actions: IntentAction[] = [];
 
-    const availableSources = targets.reduce(
-      (acc, source) => ({
+    const availableTargets = targets.reduce(
+      (acc, target) => ({
         ...acc,
-        [source]: {},
+        [target.main]: {},
       }),
-      {} as { [sourceId: Id<T>]: CreepsRecord }
+      {} as { [targetId: Id<T>]: CreepsRecord }
     );
 
     this.getAssignedCreeps().forEach((cc) => {
       [...Array(cc.creepCount).keys()].forEach(() => {
-        const leastAssignedSourceId = (
-          Object.entries(availableSources) as [Id<T>, CreepsRecord][]
-        ).reduce((accSourceId, [sourceId, creepConfigs]) => {
+        const leastAssignedTargetId = (
+          Object.entries(availableTargets) as [Id<T>, CreepsRecord][]
+        ).reduce((accTargetId, [targetId, creepConfigs]) => {
           const totalCreeps = Object.values(creepConfigs).reduce(
             (acc, creep) => acc + creep.creepCount,
             0
           );
           const totalInSource = Object.values(
-            availableSources[accSourceId]
+            availableTargets[accTargetId]
           ).reduce((acc, creep) => acc + creep.creepCount, 0);
 
           if (totalCreeps < totalInSource) {
-            return sourceId;
+            return targetId;
           }
-          return accSourceId;
-        }, Object.keys(availableSources)[0] as Id<T>);
+          return accTargetId;
+        }, Object.keys(availableTargets)[0] as Id<T>);
 
         if (
-          availableSources[leastAssignedSourceId][
+          availableTargets[leastAssignedTargetId][
             `${cc.creepType}:${cc.creepSize ?? 'default'}`
           ]
         ) {
-          availableSources[leastAssignedSourceId][
+          availableTargets[leastAssignedTargetId][
             `${cc.creepType}:${cc.creepSize ?? 'default'}`
           ].creepCount++;
         } else {
-          availableSources[leastAssignedSourceId][
+          availableTargets[leastAssignedTargetId][
             `${cc.creepType}:${cc.creepSize ?? 'default'}`
           ] = {
             creepType: cc.creepType,
@@ -115,24 +118,26 @@ export abstract class Intent {
     });
 
     actions.push(
-      ...(Object.entries(availableSources) as [Id<Source>, CreepsRecord][])
+      ...(Object.entries(availableTargets) as [Id<T>, CreepsRecord][])
         .filter(
-          ([, source]) =>
-            Object.values(source).reduce((acc, v) => acc + v.creepCount, 0) > 0
+          ([, target]) =>
+            Object.values(target).reduce((acc, v) => acc + v.creepCount, 0) > 0
         )
-        .map(([sourceId, source]): IntentAction => {
-          const totalCreeps = Object.values(source).reduce(
+        .map(([targetId, creeps]): IntentAction => {
+          const totalCreeps = Object.values(creeps).reduce(
             (acc, v) => acc + v.creepCount,
             0
           );
+          const origTarget = targets.find((t) => t.main === targetId);
           return {
-            id: this.getTaskKey(taskType, totalCreeps, sourceId),
+            id: this.getTaskKey(taskType, totalCreeps, targetId),
             taskType,
-            targetId: sourceId,
-            creeps: source,
+            targetId,
+            creeps,
             totalCreeps,
-            subTargetId,
-            targetRoom,
+            subTargetId: origTarget?.sub,
+            targetRoom: origTarget?.targetRoom,
+            data: origTarget?.data,
           };
         })
     );

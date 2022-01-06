@@ -12,7 +12,7 @@ export class TransportToStorageIntent extends Intent {
         return [
           {
             creepType: 'transport',
-            creepCount: 2,
+            creepCount: 3,
           },
         ];
       case 5:
@@ -44,38 +44,46 @@ export class TransportToStorageIntent extends Intent {
       };
     }
 
-    const containers: StructureContainer[] = [];
-
-    this.roomDirector.room.find(FIND_SOURCES).forEach((source) => {
-      const container = source.pos.findInRange<
-        FIND_STRUCTURES,
-        StructureContainer
-      >(FIND_STRUCTURES, 4, {
-        filter: (structure) => structure.structureType === STRUCTURE_CONTAINER,
-      })[0];
-
-      if (container) {
-        containers.push(container);
-      }
+    const energyContainers = this.roomDirector.room.find<
+      FIND_STRUCTURES,
+      StructureContainer
+    >(FIND_STRUCTURES, {
+      filter: (structure) =>
+        structure.structureType === STRUCTURE_CONTAINER &&
+        structure.pos.findInRange(FIND_SOURCES, 2).length > 0,
     });
 
-    if (containers.length === 0) {
-      return {
-        shouldAct: false,
-        actions: [],
-      };
-    }
+    const mineralContainers = this.roomDirector.room.find<
+      FIND_STRUCTURES,
+      StructureContainer
+    >(FIND_STRUCTURES, {
+      filter: (structure) =>
+        structure.structureType === STRUCTURE_CONTAINER &&
+        structure.pos.findInRange(FIND_MINERALS, 2).length > 0,
+    });
+
+    const terminal = this.roomDirector.room.terminal;
 
     actions.push(
-      ...this.assignCreepsToTargets<StructureContainer>({
-        targets: containers.map((c) => c.id),
+      ...this.assignCreepsToTargets<
+        StructureContainer,
+        StructureStorage | StructureTerminal
+      >({
+        targets: terminal
+          ? [
+              ...energyContainers.map((c) => ({ main: c.id, sub: storage.id })),
+              ...mineralContainers.map((c) => ({
+                main: c.id,
+                sub: terminal.id,
+              })),
+            ]
+          : energyContainers.map((c) => ({ main: c.id, sub: storage.id })),
         taskType: TaskType.Transport,
-        subTargetId: storage.id,
       })
     );
 
     return {
-      shouldAct: true,
+      shouldAct: actions.length > 0,
       actions,
     };
   }

@@ -89,7 +89,7 @@ export class RepairIntent extends Intent {
 
     actions.push(
       ...this.assignCreepsToTargets<AnyStructure>({
-        targets: damagedStructures.map((structure) => structure.id),
+        targets: damagedStructures.map((structure) => ({ main: structure.id })),
         taskType: TaskType.Repair,
       })
     );

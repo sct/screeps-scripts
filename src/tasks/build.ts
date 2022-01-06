@@ -9,7 +9,7 @@ export class BuildTask extends Task<ConstructionSite> {
   }
 
   public run(): void {
-    if (this.kouhai.memory.working && this.currentStoredEnergy() === 0) {
+    if (this.kouhai.memory.working && this.currentStore() === 0) {
       this.kouhai.memory.working = false;
       this.kouhai.creep.say('🔄 harvest');
     }

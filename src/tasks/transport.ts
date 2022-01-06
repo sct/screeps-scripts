@@ -24,13 +24,26 @@ export class TransportTask extends Task<
     if (preferSubTarget) {
       this.preferSubtarget = preferSubTarget;
     }
+
+    if (kouhai.creep.store[RESOURCE_ENERGY] === 0) {
+      this.preferSubtarget = true;
+    }
+  }
+
+  public transfer(target: AnyCreep | Structure<StructureConstant>): void {
+    if (
+      this.kouhai.creep.transfer(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE
+    ) {
+      this.kouhai.creep.travelTo(target);
+    } else if (
+      this.kouhai.creep.transfer(target, RESOURCE_KEANIUM) === ERR_NOT_IN_RANGE
+    ) {
+      this.kouhai.creep.travelTo(target);
+    }
   }
 
   public run(): void {
-    if (
-      this.kouhai.memory.working &&
-      this.kouhai.creep.store[RESOURCE_ENERGY] === 0
-    ) {
+    if (this.kouhai.memory.working && this.currentStore() === 0) {
       this.kouhai.memory.working = false;
       this.kouhai.creep.say('🔄 pick up');
     }
@@ -60,24 +73,23 @@ export class TransportTask extends Task<
       const trySecond = this.preferSubtarget ? closestSpawnOrTower : target;
 
       if (tryFirst) {
-        if (
-          this.kouhai.creep.transfer(tryFirst, RESOURCE_ENERGY) ===
-          ERR_NOT_IN_RANGE
-        ) {
-          this.kouhai.creep.travelTo(tryFirst);
-        }
+        this.transfer(tryFirst);
       } else if (trySecond) {
-        if (
-          this.kouhai.creep.transfer(trySecond, RESOURCE_ENERGY) ===
-          ERR_NOT_IN_RANGE
-        ) {
-          this.kouhai.creep.travelTo(trySecond);
-        }
+        this.transfer(trySecond);
       }
     } else if (this.targetId) {
       const target = Game.getObjectById(this.targetId);
       if (target) {
-        this.moveAndCollectEnergy(target);
+        if (target.store[RESOURCE_ENERGY] > 0) {
+          this.moveAndCollectEnergy(target);
+        } else if (target.store[RESOURCE_KEANIUM] > 0) {
+          if (
+            this.kouhai.creep.withdraw(target, RESOURCE_KEANIUM) ===
+            ERR_NOT_IN_RANGE
+          ) {
+            this.kouhai.creep.travelTo(target);
+          }
+        }
       }
     }
   }

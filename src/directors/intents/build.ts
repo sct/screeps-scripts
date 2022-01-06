@@ -50,7 +50,7 @@ export class BuildIntent extends Intent {
 
     actions.push(
       ...this.assignCreepsToTargets<ConstructionSite>({
-        targets: constructionSites.map((cs) => cs.id),
+        targets: constructionSites.map((cs) => ({ main: cs.id })),
         taskType: TaskType.Build,
       })
     );

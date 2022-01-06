@@ -1,6 +1,4 @@
-import { Task, TaskType } from './task';
-
-const DEFAULT_SIGN = 'All hail the our new overlord. sct.';
+import { DEFAULT_SIGN, Task, TaskType } from './task';
 export class UpgradeTask extends Task<StructureController> {
   public taskType = TaskType.Upgrade;
 
@@ -19,14 +17,7 @@ export class UpgradeTask extends Task<StructureController> {
 
     if (this.kouhai.memory.working && this.kouhai.creep.room.controller) {
       if (this.kouhai.creep.room.controller.sign?.text !== DEFAULT_SIGN) {
-        if (
-          this.kouhai.creep.signController(
-            this.kouhai.creep.room.controller,
-            DEFAULT_SIGN
-          ) === ERR_NOT_IN_RANGE
-        ) {
-          this.kouhai.creep.moveTo(this.kouhai.creep.room.controller);
-        }
+        this.signController();
       } else if (
         this.kouhai.creep.upgradeController(this.kouhai.creep.room.controller) ===
         ERR_NOT_IN_RANGE

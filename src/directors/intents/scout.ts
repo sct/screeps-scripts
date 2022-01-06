@@ -15,7 +15,7 @@ export class ScoutIntent extends Intent {
       case 6:
         return [
           {
-            creepCount: 16,
+            creepCount: 4,
             creepType: 'scout',
           },
         ];

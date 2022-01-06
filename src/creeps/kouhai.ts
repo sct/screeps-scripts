@@ -15,6 +15,7 @@ interface ActiveTaskMemory {
   taskType: TaskType;
   targetId?: Id<any>;
   subTargetId?: Id<any>;
+  targetRoom?: string;
   data: Record<string, unknown>;
 }
 
