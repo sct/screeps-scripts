@@ -13,7 +13,7 @@ export class TransportToControllerIntent extends Intent {
           {
             creepCount: 1,
             creepType: 'transport',
-            creepSize: 'double',
+            creepSize: 'standard',
           },
         ];
       case 5:
