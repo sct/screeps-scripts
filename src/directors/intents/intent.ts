@@ -13,7 +13,9 @@ export interface CreepConfig {
   creepCount: number;
 }
 
-export type CreepsRecord = Record<`${CreepType}:${CreepSize}`, CreepConfig>;
+export type CreepsRecord = Partial<
+  Record<`${CreepType}:${CreepSize}`, CreepConfig>
+>;
 
 export interface IntentAction {
   id: string;
@@ -102,9 +104,12 @@ export abstract class Intent {
             `${cc.creepType}:${cc.creepSize ?? 'default'}`
           ]
         ) {
+          // I hate that I have to add this disable here but TypeScript is telling me
+          // the following is possible null when its just notttttttttttt
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           availableTargets[leastAssignedTargetId][
             `${cc.creepType}:${cc.creepSize ?? 'default'}`
-          ].creepCount++;
+          ]!.creepCount++;
         } else {
           availableTargets[leastAssignedTargetId][
             `${cc.creepType}:${cc.creepSize ?? 'default'}`

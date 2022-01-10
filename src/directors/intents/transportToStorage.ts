@@ -5,39 +5,32 @@ export class TransportToStorageIntent extends Intent {
   protected intentKey = 'transportToStorage';
 
   protected getAssignedCreeps(): CreepConfig[] {
+    // Mainly we are just deciding here if transporters are
+    // enabled or not. The # of them is deciding below
+    // based on the number of containers near sources/minerals
     switch (this.roomDirector.memory.rcl) {
       case 8:
       case 7:
       case 6:
-        return [
-          {
-            creepType: 'transport',
-            creepCount: 3,
-          },
-        ];
       case 5:
       case 4:
         return [
           {
             creepType: 'transport',
-            creepCount: 2,
+            creepCount: 1,
           },
         ];
       default:
-        return [
-          {
-            creepType: 'transport',
-            creepCount: 0,
-          },
-        ];
+        return [];
     }
   }
 
   public run(): IntentResponse {
     const actions: IntentAction[] = [];
+    const assignedCreeps = this.getAssignedCreeps();
 
     const storage = this.roomDirector.room.storage;
-    if (!storage) {
+    if (!storage || assignedCreeps.length === 0) {
       return {
         shouldAct: false,
         actions: [],
@@ -65,22 +58,42 @@ export class TransportToStorageIntent extends Intent {
     const terminal = this.roomDirector.room.terminal;
 
     actions.push(
-      ...this.assignCreepsToTargets<
-        StructureContainer,
-        StructureStorage | StructureTerminal
-      >({
-        targets: terminal
-          ? [
-              ...energyContainers.map((c) => ({ main: c.id, sub: storage.id })),
-              ...mineralContainers.map((c) => ({
-                main: c.id,
-                sub: terminal.id,
-              })),
-            ]
-          : energyContainers.map((c) => ({ main: c.id, sub: storage.id })),
-        taskType: TaskType.Transport,
-      })
+      ...energyContainers.map(
+        (container): IntentAction => ({
+          id: this.getTaskKey(TaskType.Transport, 1, container.id),
+          taskType: TaskType.Transport,
+          totalCreeps: 1,
+          targetId: container.id,
+          subTargetId: storage.id,
+          creeps: {
+            'transport:default': {
+              creepCount: 1,
+              creepType: 'transport',
+            },
+          },
+        })
+      )
     );
+
+    if (terminal) {
+      actions.push(
+        ...mineralContainers.map(
+          (container): IntentAction => ({
+            id: this.getTaskKey(TaskType.Transport, 1, container.id),
+            taskType: TaskType.Transport,
+            totalCreeps: 1,
+            targetId: container.id,
+            subTargetId: terminal.id,
+            creeps: {
+              'transport:default': {
+                creepCount: 1,
+                creepType: 'transport',
+              },
+            },
+          })
+        )
+      );
+    }
 
     return {
       shouldAct: actions.length > 0,
