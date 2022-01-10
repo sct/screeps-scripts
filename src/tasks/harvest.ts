@@ -17,15 +17,10 @@ export class HarvestTask extends Task<Source> {
   public transferToStorage(preferStorage = false): void {
     const isMining = this.kouhai.memory.activeTask?.taskKey.startsWith('mine');
     if (this.kouhai.memory.room !== this.kouhai.creep.room.name) {
-      const exitDir = this.kouhai.creep.room.findExitTo(
-        this.kouhai.memory.room
+      this.kouhai.creep.travelTo(
+        new RoomPosition(25, 25, this.kouhai.memory.room),
+        { range: 23 }
       );
-      if (exitDir !== -2 && exitDir !== -10) {
-        const exit = this.kouhai.creep.pos.findClosestByRange(exitDir);
-        if (exit) {
-          this.kouhai.creep.travelTo(exit);
-        }
-      }
       return;
     }
     const closestSpawn = this.kouhai.creep.pos.findClosestByPath(

@@ -11,15 +11,10 @@ export class ReserveTask extends Task {
     }
 
     // If we are not in the target room, head there
-    // TODO: make this work across multiple rooms
     if (targetRoom !== this.kouhai.creep.room.name) {
-      const exitDir = this.kouhai.creep.room.findExitTo(targetRoom);
-      if (exitDir !== -2 && exitDir !== -10) {
-        const exit = this.kouhai.creep.pos.findClosestByRange(exitDir);
-        if (exit) {
-          this.kouhai.creep.travelTo(exit);
-        }
-      }
+      this.kouhai.creep.travelTo(new RoomPosition(25, 25, targetRoom), {
+        range: 23,
+      });
       return;
     }
     // Sign the controller ;)

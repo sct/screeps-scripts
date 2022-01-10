@@ -189,11 +189,29 @@ export class RoomDirector {
    * Checks room memory data (if available) and returns the available extension sources (in order of distance)
    */
   private evaluateRemoteMining(): void {
-    const exits = Game.map.describeExits(this.room.name);
     const spawn = Game.getObjectById(this.spawns[0]);
     const remoteSourceIds: RoomDirectorMemory['remoteSources'] = [];
 
-    Object.values(exits).forEach((exit) => {
+    const roomPositions = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(this.room.name);
+
+    if (!roomPositions) {
+      return;
+    }
+
+    const wrappingRooms: string[] = [];
+
+    for (let x = -1; x <= 1; x++) {
+      for (let y = -1; y <= 1; y++) {
+        if (!(x === 0 && y === 0)) {
+          const roomName = `${roomPositions[1]}${
+            parseInt(roomPositions[2], 10) + x
+          }${roomPositions[3]}${parseInt(roomPositions[4], 10) + y}`;
+          wrappingRooms.push(roomName);
+        }
+      }
+    }
+
+    Object.values(wrappingRooms).forEach((exit) => {
       const roomMemory = RoomDirector.getRoomMemory(exit);
 
       if (spawn && roomMemory && roomMemory.availableSources.length > 0) {

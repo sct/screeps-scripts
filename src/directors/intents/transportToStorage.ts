@@ -53,7 +53,7 @@ export class TransportToStorageIntent extends Intent {
       filter: (structure) =>
         structure.structureType === STRUCTURE_CONTAINER &&
         // We will only bother with this container if the mineral is not depleted
-        structure.pos.findInRange(FIND_MINERALS, 2)?.[0].mineralAmount > 0,
+        structure.pos.findInRange(FIND_MINERALS, 2)?.[0]?.mineralAmount > 0,
     });
 
     const terminal = this.roomDirector.room.terminal;
