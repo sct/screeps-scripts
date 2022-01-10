@@ -13,7 +13,11 @@ export class MineIntent extends Intent {
         filter: (structure) => structure.structureType === STRUCTURE_EXTRACTOR,
       })?.[0];
 
-      if (extractor) {
+      const mineralDeposits = this.roomDirector.room.find(FIND_MINERALS, {
+        filter: (mineral) => mineral.mineralAmount > 0,
+      })?.[0];
+
+      if (extractor && mineralDeposits) {
         return [
           {
             creepType: 'drone',
