@@ -15,13 +15,19 @@ export class RepairTask extends Task<AnyStructure> {
   }
 
   public run(): void {
-    if (this.kouhai.memory.working && this.kouhai.creep.store[RESOURCE_ENERGY] === 0) {
+    if (
+      this.kouhai.memory.working &&
+      this.kouhai.creep.store[RESOURCE_ENERGY] === 0
+    ) {
       this.kouhai.memory.working = false;
-      this.kouhai.creep.say("🔄 harvest");
+      this.kouhai.creep.say('🔄 harvest');
     }
-    if (!this.kouhai.memory.working && this.kouhai.creep.store.getFreeCapacity() === 0) {
+    if (
+      !this.kouhai.memory.working &&
+      this.kouhai.creep.store.getFreeCapacity() === 0
+    ) {
       this.kouhai.memory.working = true;
-      this.kouhai.creep.say("🚧 repair");
+      this.kouhai.creep.say('🚧 repair');
     }
 
     if (this.kouhai.memory.working && this.targetId) {
@@ -31,6 +37,15 @@ export class RepairTask extends Task<AnyStructure> {
         this.repair(damagedStructure);
       }
     } else {
+      // Travel back to home room if we need energy
+      if (this.kouhai.creep.room.name !== this.kouhai.memory.room) {
+        this.kouhai.creep.travelTo(
+          new RoomPosition(25, 25, this.kouhai.memory.room),
+          { range: 23 }
+        );
+        return;
+      }
+
       const containerEnergy = this.getClosestContainerEnergy();
       const source = this.getClosestSource();
       if (containerEnergy) {

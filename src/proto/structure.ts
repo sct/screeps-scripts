@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 Structure.prototype.around = function () {
   const positions: { x: number; y: number }[] = [];
 

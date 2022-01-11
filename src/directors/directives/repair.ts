@@ -1,5 +1,10 @@
 import { TaskType } from 'tasks/task';
-import { CreepConfig, Directive, DirectiveAction, DirectiveResponse } from './directive';
+import {
+  CreepConfig,
+  Directive,
+  DirectiveAction,
+  DirectiveResponse
+} from './directive';
 
 interface StructureRepairConfigData {
   repairThreshold: number;
@@ -76,8 +81,24 @@ export class RepairDirective extends Directive {
 
   public run(): DirectiveResponse {
     const actions: DirectiveAction[] = [];
-    const damagedStructures = this.roomDirector.room.find(FIND_STRUCTURES, {
-      filter: (structure) => this.needsRepair(structure),
+    const damagedStructures: AnyStructure[] = [];
+    damagedStructures.push(
+      ...this.roomDirector.room.find(FIND_STRUCTURES, {
+        filter: (structure) => this.needsRepair(structure),
+      })
+    );
+
+    // Get expansion room repairables
+    this.roomDirector.memory.expansionRooms.forEach((r) => {
+      const room = Game.rooms[r.roomName];
+
+      if (room) {
+        damagedStructures.push(
+          ...room.find(FIND_STRUCTURES, {
+            filter: (structure) => this.needsRepair(structure),
+          })
+        );
+      }
     });
 
     if (damagedStructures.length === 0) {
@@ -89,7 +110,10 @@ export class RepairDirective extends Directive {
 
     actions.push(
       ...this.assignCreepsToTargets<AnyStructure>({
-        targets: damagedStructures.map((structure) => ({ main: structure.id })),
+        targets: damagedStructures.map((structure) => ({
+          main: structure.id,
+          targetRoom: structure.room.name,
+        })),
         taskType: TaskType.Repair,
       })
     );

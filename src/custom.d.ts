@@ -8,7 +8,7 @@ interface Creep {
 }
 
 interface Structure {
-  around(): { x: number; y: number }[];
+  around(): Coord[];
   isWalkable(): boolean;
 }
 
@@ -24,4 +24,8 @@ interface RoomPosition {
 
 interface ConstructionSite {
   isWalkable(): boolean;
+}
+
+interface Source {
+  around(): Coord[];
 }
