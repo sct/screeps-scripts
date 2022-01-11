@@ -1,8 +1,8 @@
 import { TaskType } from 'tasks/task';
-import { CreepConfig, Intent, IntentAction, IntentResponse } from './intent';
+import { CreepConfig, Directive, DirectiveAction, DirectiveResponse } from './directive';
 
-export class EnergyIntent extends Intent {
-  protected intentKey = 'energy';
+export class EnergyDirective extends Directive {
+  protected directiveKey = 'energy';
   public static ENERGY_EMERGENCY_THRESHOLD = 0.1;
   public static HARVESTER_EMERGENCY_THRESHOLD = 2;
 
@@ -96,8 +96,8 @@ export class EnergyIntent extends Intent {
     }
   }
 
-  public run(): IntentResponse {
-    const actions: IntentAction[] = [];
+  public run(): DirectiveResponse {
+    const actions: DirectiveAction[] = [];
 
     actions.push(
       ...this.assignCreepsToTargets<Source>({

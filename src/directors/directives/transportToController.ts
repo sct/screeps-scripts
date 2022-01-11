@@ -1,8 +1,8 @@
 import { TaskType } from 'tasks/task';
-import { CreepConfig, Intent, IntentAction, IntentResponse } from './intent';
+import { CreepConfig, Directive, DirectiveAction, DirectiveResponse } from './directive';
 
-export class TransportToControllerIntent extends Intent {
-  protected intentKey = 'transportToController';
+export class TransportToControllerDirective extends Directive {
+  protected directiveKey = 'transportToController';
 
   protected getAssignedCreeps(): CreepConfig[] {
     switch (this.roomDirector.memory.rcl) {
@@ -35,8 +35,8 @@ export class TransportToControllerIntent extends Intent {
     }
   }
 
-  public run(): IntentResponse {
-    const actions: IntentAction[] = [];
+  public run(): DirectiveResponse {
+    const actions: DirectiveAction[] = [];
 
     const controller = this.roomDirector.room.controller;
     const storage = this.roomDirector.room.storage;

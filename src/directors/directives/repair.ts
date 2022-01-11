@@ -1,5 +1,5 @@
 import { TaskType } from 'tasks/task';
-import { CreepConfig, Intent, IntentAction, IntentResponse } from './intent';
+import { CreepConfig, Directive, DirectiveAction, DirectiveResponse } from './directive';
 
 interface StructureRepairConfigData {
   repairThreshold: number;
@@ -27,8 +27,8 @@ const StructureRepairConfig: {
   },
 };
 
-export class RepairIntent extends Intent {
-  protected intentKey = 'repair';
+export class RepairDirective extends Directive {
+  protected directiveKey = 'repair';
 
   public getAssignedCreeps(): CreepConfig[] {
     switch (this.roomDirector.memory.rcl) {
@@ -56,7 +56,7 @@ export class RepairIntent extends Intent {
   }
 
   private needsRepair(structure: AnyStructure) {
-    const inProgress = this.roomDirector.memory.activeIntentActions.some(
+    const inProgress = this.roomDirector.memory.activeDirectiveActions.some(
       (action) =>
         action.targetId === structure.id && action.taskType === TaskType.Repair
     );
@@ -74,8 +74,8 @@ export class RepairIntent extends Intent {
     return damagedPercent < repairConfig.repairThreshold;
   }
 
-  public run(): IntentResponse {
-    const actions: IntentAction[] = [];
+  public run(): DirectiveResponse {
+    const actions: DirectiveAction[] = [];
     const damagedStructures = this.roomDirector.room.find(FIND_STRUCTURES, {
       filter: (structure) => this.needsRepair(structure),
     });

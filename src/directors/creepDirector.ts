@@ -10,7 +10,7 @@ import { TaskType } from 'tasks/task';
 import { TransportTask } from 'tasks/transport';
 import { UpgradeTask } from 'tasks/upgrade';
 import log from 'utils/logger';
-import { IntentAction } from './intents/intent';
+import { DirectiveAction } from './directives/directive';
 import { RoomDirector } from './roomDirector';
 
 export type CreepType =
@@ -214,7 +214,10 @@ export class CreepDirector {
     );
   }
 
-  public assignCreeps(roomDirector: RoomDirector, action: IntentAction): void {
+  public assignCreeps(
+    roomDirector: RoomDirector,
+    action: DirectiveAction
+  ): void {
     Object.values(action.creeps).forEach((creepConfig) => {
       const workingThisType = this.getActiveKouhaiInRoom(
         roomDirector.room
@@ -347,13 +350,13 @@ export class CreepDirector {
       }
     });
 
-    // Clean up any creeps that no longer have an active intent
+    // Clean up any creeps that no longer have an active directive
     _.forEach(this.getActiveKouhai(), (kouhai) => {
       if (
         kouhai.activeTask &&
         !this.shachou.roomDirectors[
           kouhai.memory.room
-        ].memory.activeIntentActions.find(
+        ].memory.activeDirectiveActions.find(
           (action) => kouhai.activeTask?.taskKey === action.id
         )
       ) {

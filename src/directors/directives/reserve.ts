@@ -2,13 +2,13 @@ import { TaskType } from 'tasks/task';
 import {
   CreepConfig,
   CreepsRecord,
-  Intent,
-  IntentAction,
-  IntentResponse
-} from './intent';
+  Directive,
+  DirectiveAction,
+  DirectiveResponse
+} from './directive';
 
-export class ReserveIntent extends Intent {
-  protected intentKey = 'reserve';
+export class ReserveDirective extends Directive {
+  protected directiveKey = 'reserve';
 
   public getAssignedCreeps(): CreepConfig[] {
     return [
@@ -23,7 +23,7 @@ export class ReserveIntent extends Intent {
     ];
   }
 
-  public run(): IntentResponse {
+  public run(): DirectiveResponse {
     const expansionRooms = this.roomDirector.memory.expansionRooms;
 
     if (expansionRooms.length === 0) {
@@ -33,7 +33,7 @@ export class ReserveIntent extends Intent {
       };
     }
 
-    const actions: IntentAction[] = [];
+    const actions: DirectiveAction[] = [];
 
     const assignedCreeps = this.getAssignedCreeps();
     const reserverCreeps = assignedCreeps

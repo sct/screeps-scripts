@@ -1,8 +1,8 @@
 import { TaskType } from 'tasks/task';
-import { CreepConfig, Intent, IntentAction, IntentResponse } from './intent';
+import { CreepConfig, Directive, DirectiveAction, DirectiveResponse } from './directive';
 
-export class TransportToStorageIntent extends Intent {
-  protected intentKey = 'transportToStorage';
+export class TransportToStorageDirective extends Directive {
+  protected directiveKey = 'transportToStorage';
 
   protected getAssignedCreeps(): CreepConfig[] {
     // Mainly we are just deciding here if transporters are
@@ -25,8 +25,8 @@ export class TransportToStorageIntent extends Intent {
     }
   }
 
-  public run(): IntentResponse {
-    const actions: IntentAction[] = [];
+  public run(): DirectiveResponse {
+    const actions: DirectiveAction[] = [];
     const assignedCreeps = this.getAssignedCreeps();
 
     const storage = this.roomDirector.room.storage;
@@ -60,7 +60,7 @@ export class TransportToStorageIntent extends Intent {
 
     actions.push(
       ...energyContainers.map(
-        (container): IntentAction => ({
+        (container): DirectiveAction => ({
           id: this.getTaskKey(TaskType.Transport, 1, container.id),
           taskType: TaskType.Transport,
           totalCreeps: 1,
@@ -79,7 +79,7 @@ export class TransportToStorageIntent extends Intent {
     if (terminal) {
       actions.push(
         ...mineralContainers.map(
-          (container): IntentAction => ({
+          (container): DirectiveAction => ({
             id: this.getTaskKey(TaskType.Transport, 1, container.id),
             taskType: TaskType.Transport,
             totalCreeps: 1,

@@ -1,8 +1,8 @@
 import { TaskType } from 'tasks/task';
-import { CreepConfig, Intent, IntentAction, IntentResponse } from './intent';
+import { CreepConfig, Directive, DirectiveAction, DirectiveResponse } from './directive';
 
-export class MineIntent extends Intent {
-  protected intentKey = 'mine';
+export class MineDirective extends Directive {
+  protected directiveKey = 'mine';
 
   public getAssignedCreeps(): CreepConfig[] {
     if (this.roomDirector.memory.rcl >= 6 && this.roomDirector.room.terminal) {
@@ -30,8 +30,8 @@ export class MineIntent extends Intent {
     return [];
   }
 
-  public run(): IntentResponse {
-    const actions: IntentAction[] = [];
+  public run(): DirectiveResponse {
+    const actions: DirectiveAction[] = [];
     const mineral = this.roomDirector.room.find(FIND_MINERALS)?.[0];
 
     if (mineral) {

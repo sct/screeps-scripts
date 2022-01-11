@@ -1,16 +1,17 @@
 /* eslint-disable no-fallthrough */
 import { Shachou } from 'shachou';
-import { BuildIntent } from './intents/build';
-import { EnergyIntent } from './intents/energy';
-import { Intent, IntentAction } from './intents/intent';
-import { MineIntent } from './intents/mine';
-import { RemoteEnergyIntent } from './intents/remoteEnergy';
-import { RepairIntent } from './intents/repair';
-import { ReserveIntent } from './intents/reserve';
-import { ScoutIntent } from './intents/scout';
-import { TransportToControllerIntent } from './intents/transportToController';
-import { TransportToStorageIntent } from './intents/transportToStorage';
-import { UpgradeIntent } from './intents/upgrade';
+import { BuildDirective } from './directives/build';
+import { Directive, DirectiveAction } from './directives/directive';
+import { EnergyDirective } from './directives/energy';
+import { MineDirective } from './directives/mine';
+import { RemoteEnergyDirective } from './directives/remoteEnergy';
+import { RepairDirective } from './directives/repair';
+import { ReserveDirective } from './directives/reserve';
+import { ScoutDirective } from './directives/scout';
+import { TransportToControllerDirective } from './directives/transportToController';
+import { TransportToStorageDirective } from './directives/transportToStorage';
+import { UpgradeDirective } from './directives/upgrade';
+import { RoadPlanner, RoadPlannerMemory } from './layout/roadPlanner';
 
 interface SourceConfig {
   id: Id<Source>;
@@ -30,7 +31,7 @@ export interface RoomDirectorMemory {
   sources: Record<Id<Source>, SourceConfig>;
   rcl: number;
   roomController?: Id<StructureController>;
-  activeIntentActions: IntentAction[];
+  activeDirectiveActions: DirectiveAction[];
   remoteSources: {
     id: Id<Source>;
     distance: number;
@@ -41,6 +42,7 @@ export interface RoomDirectorMemory {
   expansionRooms: {
     roomName: string;
   }[];
+  roadPlanner: RoadPlannerMemory;
 }
 
 const RoomMemoryDefaults: RoomDirectorMemory = {
@@ -49,7 +51,7 @@ const RoomMemoryDefaults: RoomDirectorMemory = {
   availableSpawnEnergy: 0,
   availableSources: [],
   sources: {},
-  activeIntentActions: [],
+  activeDirectiveActions: [],
   availableStoredEnergy: 0,
   rcl: 0,
   spawnCapacity: 0,
@@ -57,6 +59,10 @@ const RoomMemoryDefaults: RoomDirectorMemory = {
   remoteSources: [],
   containers: [],
   expansionRooms: [],
+  roadPlanner: {
+    roadLocations: {},
+    roads: {},
+  },
 };
 
 export class RoomDirector {
@@ -72,14 +78,16 @@ export class RoomDirector {
 
   public room: Room;
   public shachou: Shachou;
-  protected intents: Intent[] = [];
+  private roadPlanner: RoadPlanner;
+  protected directives: Directive[] = [];
 
   public constructor(room: Room, shachou: Shachou) {
     this.room = room;
     this.shachou = shachou;
+    this.roadPlanner = new RoadPlanner(this);
     _.defaults(this.memory, RoomMemoryDefaults);
     this.initialize();
-    this.setIntents();
+    this.setDirectives();
   }
 
   public get memory(): RoomDirectorMemory {
@@ -114,7 +122,7 @@ export class RoomDirector {
           .map((source) => source.id),
         rcl: this.room.controller?.level ?? 0,
         roomController: this.room.controller?.id,
-        activeIntentActions: this.memory.activeIntentActions ?? [],
+        activeDirectiveActions: this.memory.activeDirectiveActions ?? [],
       });
       // if (
       //   Object.values(this.memory.sources).length === 0 &&
@@ -128,6 +136,10 @@ export class RoomDirector {
         this.autoConstruction();
         this.evaluateExpansion();
       }
+    }
+
+    if (this.room.controller?.my) {
+      this.roadPlanner.run();
     }
   }
 
@@ -242,39 +254,39 @@ export class RoomDirector {
     );
   }
 
-  private setIntents(): void {
-    const intents: Intent[] = [];
+  private setDirectives(): void {
+    const directives: Directive[] = [];
 
     switch (this.memory.rcl) {
       case 8:
       case 7:
       case 6:
-        intents.push(new MineIntent({ roomDirector: this }));
+        directives.push(new MineDirective({ roomDirector: this }));
       case 5:
       case 4:
-        intents.push(
-          new TransportToControllerIntent({ roomDirector: this }),
-          new TransportToStorageIntent({ roomDirector: this })
+        directives.push(
+          new TransportToControllerDirective({ roomDirector: this }),
+          new TransportToStorageDirective({ roomDirector: this })
         );
       case 3:
-        intents.push(
-          new ReserveIntent({ roomDirector: this }),
-          new RemoteEnergyIntent({ roomDirector: this }),
-          new ScoutIntent({ roomDirector: this })
+        directives.push(
+          new ReserveDirective({ roomDirector: this }),
+          new RemoteEnergyDirective({ roomDirector: this }),
+          new ScoutDirective({ roomDirector: this })
         );
       case 2:
-        intents.push(
-          new RepairIntent({ roomDirector: this }),
-          new BuildIntent({ roomDirector: this })
+        directives.push(
+          new RepairDirective({ roomDirector: this }),
+          new BuildDirective({ roomDirector: this })
         );
       default:
-        intents.push(
-          new UpgradeIntent({ roomDirector: this }),
-          new EnergyIntent({ roomDirector: this })
+        directives.push(
+          new UpgradeDirective({ roomDirector: this }),
+          new EnergyDirective({ roomDirector: this })
         );
     }
 
-    this.intents = intents.reverse();
+    this.directives = directives.reverse();
   }
 
   private autoConstruction() {
@@ -337,22 +349,24 @@ export class RoomDirector {
   }
 
   public run(): void {
-    const activeIntentActions: IntentAction[] = [];
+    const activeDirectiveActions: DirectiveAction[] = [];
     if (
       this.room.controller &&
       this.room.controller.level > 0 &&
       this.room.controller.my
     ) {
-      this.intents.forEach((intent) => {
-        const response = intent.run();
+      this.directives.forEach((directive) => {
+        const response = directive.run();
         if (response.shouldAct) {
           response.actions.forEach((action) => {
-            activeIntentActions.push(action);
+            activeDirectiveActions.push(action);
             this.shachou.creepDirector.assignCreeps(this, action);
           });
         }
       });
-      this.memory.activeIntentActions = activeIntentActions;
+
+      this.memory.activeDirectiveActions = activeDirectiveActions;
+
       if (this.room.storage) {
         const storageLink = this.room.storage.pos.findInRange<
           FIND_STRUCTURES,

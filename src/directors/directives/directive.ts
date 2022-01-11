@@ -2,7 +2,7 @@ import { CreepSize, CreepType } from 'directors/creepDirector';
 import { RoomDirector } from 'directors/roomDirector';
 import { TaskType } from 'tasks/task';
 
-interface IntentSetup {
+interface DirectiveSetup {
   roomDirector: RoomDirector;
 }
 
@@ -17,7 +17,7 @@ export type CreepsRecord = Partial<
   Record<`${CreepType}:${CreepSize}`, CreepConfig>
 >;
 
-export interface IntentAction {
+export interface DirectiveAction {
   id: string;
   taskType: TaskType;
   creeps: CreepsRecord;
@@ -28,16 +28,16 @@ export interface IntentAction {
   data?: Record<string, unknown>;
 }
 
-export interface IntentResponse {
+export interface DirectiveResponse {
   shouldAct: boolean;
-  actions: IntentAction[];
+  actions: DirectiveAction[];
 }
 
-export abstract class Intent {
-  protected abstract intentKey: string;
+export abstract class Directive {
+  protected abstract directiveKey: string;
   protected roomDirector: RoomDirector;
 
-  public constructor(setup: IntentSetup) {
+  public constructor(setup: DirectiveSetup) {
     this.roomDirector = setup.roomDirector;
   }
 
@@ -46,7 +46,7 @@ export abstract class Intent {
     creeps: number,
     targetId = 'none'
   ): string {
-    return `${this.intentKey}:${taskType}:${creeps}:${targetId.slice(-7)}`;
+    return `${this.directiveKey}:${taskType}:${creeps}:${targetId.slice(-7)}`;
   }
 
   protected getTotalCreeps(): number {
@@ -69,8 +69,8 @@ export abstract class Intent {
       data?: Record<string, unknown>;
     }[];
     taskType: TaskType;
-  }): IntentAction[] {
-    const actions: IntentAction[] = [];
+  }): DirectiveAction[] {
+    const actions: DirectiveAction[] = [];
 
     const availableTargets = targets.reduce(
       (acc, target) => ({
@@ -128,7 +128,7 @@ export abstract class Intent {
           ([, target]) =>
             Object.values(target).reduce((acc, v) => acc + v.creepCount, 0) > 0
         )
-        .map(([targetId, creeps]): IntentAction => {
+        .map(([targetId, creeps]): DirectiveAction => {
           const totalCreeps = Object.values(creeps).reduce(
             (acc, v) => acc + v.creepCount,
             0
@@ -150,5 +150,5 @@ export abstract class Intent {
     return actions;
   }
   protected abstract getAssignedCreeps(): CreepConfig[];
-  public abstract run(): IntentResponse;
+  public abstract run(): DirectiveResponse;
 }

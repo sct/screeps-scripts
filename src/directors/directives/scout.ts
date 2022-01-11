@@ -2,55 +2,36 @@ import { TaskType } from 'tasks/task';
 import {
   CreepConfig,
   CreepsRecord,
-  Intent,
-  IntentAction,
-  IntentResponse
-} from './intent';
+  Directive,
+  DirectiveAction,
+  DirectiveResponse
+} from './directive';
 
-export class UpgradeIntent extends Intent {
-  protected intentKey = 'upgrade';
+export class ScoutDirective extends Directive {
+  protected directiveKey = 'scout';
 
   protected getAssignedCreeps(): CreepConfig[] {
     switch (this.roomDirector.memory.rcl) {
-      case 8:
-      case 7:
       case 6:
         return [
           {
-            creepType: 'drone',
-            creepSize: 'double',
-            creepCount: 1,
-          },
-        ];
-      case 5:
-      case 4:
-        return [
-          {
-            creepType: 'drone',
-            creepSize: 'standard',
-            creepCount: 2,
-          },
-        ];
-      case 3:
-      case 2:
-        return [
-          {
-            creepType: 'drone',
-            creepCount: 3,
+            creepCount: 4,
+            creepType: 'scout',
           },
         ];
       default:
         return [
           {
-            creepType: 'drone',
             creepCount: 1,
+            creepType: 'scout',
+            creepSize: 'default',
           },
         ];
     }
   }
 
-  public run(): IntentResponse {
-    const actions: IntentAction[] = [];
+  public run(): DirectiveResponse {
+    const actions: DirectiveAction[] = [];
 
     const assignedCreeps = this.getAssignedCreeps();
     const totalCreeps = assignedCreeps.reduce(
@@ -67,12 +48,11 @@ export class UpgradeIntent extends Intent {
 
     actions.push({
       id: this.getTaskKey(
-        TaskType.Upgrade,
+        TaskType.Scout,
         totalCreeps,
-        this.roomDirector.memory.roomController
+        this.roomDirector.room.name
       ),
-      taskType: TaskType.Upgrade,
-      targetId: this.roomDirector.memory.roomController,
+      taskType: TaskType.Scout,
       creeps,
       totalCreeps,
     });

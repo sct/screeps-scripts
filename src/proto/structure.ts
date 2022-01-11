@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 Structure.prototype.around = function () {
   const positions: { x: number; y: number }[] = [];
 
@@ -10,4 +11,13 @@ Structure.prototype.around = function () {
   }
 
   return positions;
+};
+
+Structure.prototype.isWalkable = function (): boolean {
+  return (
+    this.structureType === STRUCTURE_ROAD ||
+    this.structureType === STRUCTURE_CONTAINER ||
+    (this.structureType === STRUCTURE_RAMPART &&
+      ((this as StructureRampart).my || (this as StructureRampart).isPublic))
+  );
 };

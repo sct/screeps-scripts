@@ -1,8 +1,13 @@
 import { TaskType } from 'tasks/task';
-import { CreepConfig, Intent, IntentAction, IntentResponse } from './intent';
+import {
+  CreepConfig,
+  Directive,
+  DirectiveAction,
+  DirectiveResponse
+} from './directive';
 
-export class BuildIntent extends Intent {
-  protected intentKey = 'build';
+export class BuildDirective extends Directive {
+  protected directiveKey = 'build';
 
   protected getAssignedCreeps(): CreepConfig[] {
     switch (this.roomDirector.memory.rcl) {
@@ -35,8 +40,8 @@ export class BuildIntent extends Intent {
     }
   }
 
-  public run(): IntentResponse {
-    const actions: IntentAction[] = [];
+  public run(): DirectiveResponse {
+    const actions: DirectiveAction[] = [];
     const constructionSites = this.roomDirector.room.find(
       FIND_CONSTRUCTION_SITES
     );
@@ -50,7 +55,7 @@ export class BuildIntent extends Intent {
 
     actions.push(
       ...this.assignCreepsToTargets<ConstructionSite>({
-        targets: constructionSites.map((cs) => ({ main: cs.id })),
+        targets: constructionSites.slice(0, 2).map((cs) => ({ main: cs.id })),
         taskType: TaskType.Build,
       })
     );

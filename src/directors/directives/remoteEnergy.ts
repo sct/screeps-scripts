@@ -1,8 +1,13 @@
 import { TaskType } from 'tasks/task';
-import { CreepConfig, Intent, IntentAction, IntentResponse } from './intent';
+import {
+  CreepConfig,
+  Directive,
+  DirectiveAction,
+  DirectiveResponse
+} from './directive';
 
-export class RemoteEnergyIntent extends Intent {
-  protected intentKey = 'remoteEnergy';
+export class RemoteEnergyDirective extends Directive {
+  protected directiveKey = 'remoteEnergy';
 
   protected getAssignedCreeps(): CreepConfig[] {
     switch (this.roomDirector.memory.rcl) {
@@ -35,9 +40,16 @@ export class RemoteEnergyIntent extends Intent {
     }
   }
 
-  public run(): IntentResponse {
-    const actions: IntentAction[] = [];
+  public run(): DirectiveResponse {
+    const actions: DirectiveAction[] = [];
     const remoteSources = this.roomDirector.memory.remoteSources;
+
+    if (remoteSources.length === 0) {
+      return {
+        shouldAct: false,
+        actions: [],
+      };
+    }
 
     actions.push(
       ...this.assignCreepsToTargets({
