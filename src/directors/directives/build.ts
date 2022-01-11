@@ -42,9 +42,20 @@ export class BuildDirective extends Directive {
 
   public run(): DirectiveResponse {
     const actions: DirectiveAction[] = [];
-    const constructionSites = this.roomDirector.room.find(
-      FIND_CONSTRUCTION_SITES
+    const constructionSites: ConstructionSite<BuildableStructureConstant>[] =
+      [];
+    constructionSites.push(
+      ...this.roomDirector.room.find(FIND_MY_CONSTRUCTION_SITES)
     );
+
+    // Get expansion room sites
+    this.roomDirector.memory.expansionRooms.forEach((r) => {
+      const room = Game.rooms[r.roomName];
+
+      if (room) {
+        constructionSites.push(...room.find(FIND_MY_CONSTRUCTION_SITES));
+      }
+    });
 
     if (constructionSites.length === 0) {
       return {
@@ -55,7 +66,9 @@ export class BuildDirective extends Directive {
 
     actions.push(
       ...this.assignCreepsToTargets<ConstructionSite>({
-        targets: constructionSites.slice(0, 2).map((cs) => ({ main: cs.id })),
+        targets: constructionSites
+          .slice(0, 2)
+          .map((cs) => ({ main: cs.id, targetRoom: cs.room?.name })),
         taskType: TaskType.Build,
       })
     );
