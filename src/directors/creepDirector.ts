@@ -24,6 +24,7 @@ export type CreepSize =
   | 'default'
   | 'standard'
   | 'double'
+  | 'heavy'
   | 'distance';
 
 const CreepSetups: Record<
@@ -71,6 +72,23 @@ const CreepSetups: Record<
       CARRY,
       CARRY,
     ],
+    heavy: [
+      WORK,
+      WORK,
+      MOVE,
+      MOVE,
+      MOVE,
+      MOVE,
+      CARRY,
+      CARRY,
+      CARRY,
+      CARRY,
+      CARRY,
+      CARRY,
+      CARRY,
+      CARRY,
+      CARRY,
+    ]
   },
   transport: {
     emergency: [CARRY, CARRY, CARRY, MOVE, MOVE],

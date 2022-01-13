@@ -17,7 +17,8 @@ export class BuildDirective extends Directive {
         return [
           {
             creepType: 'drone',
-            creepCount: 6,
+            creepCount: 4,
+            creepSize: 'heavy',
           },
         ];
       case 5:

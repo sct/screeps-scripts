@@ -59,3 +59,17 @@ RoomPosition.prototype.getMultiRoomRangeTo = function (
 RoomPosition.prototype.room = function () {
   return Game.rooms[this.roomName];
 };
+
+RoomPosition.prototype.around = function () {
+  const positions: { x: number; y: number }[] = [];
+
+  for (let x = -1; x <= 1; x++) {
+    for (let y = -1; y <= 1; y++) {
+      if (!(x === 0 && y === 0)) {
+        positions.push({ x: this.x + x, y: this.y + y });
+      }
+    }
+  }
+
+  return positions;
+};

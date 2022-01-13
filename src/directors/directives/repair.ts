@@ -27,8 +27,8 @@ const StructureRepairConfig: {
     repairedThreshold: 0.0005,
   },
   [STRUCTURE_CONTAINER]: {
-    repairThreshold: 0.2,
-    repairedThreshold: 0.4,
+    repairThreshold: 0.4,
+    repairedThreshold: 0.8,
   },
 };
 
@@ -40,6 +40,13 @@ export class RepairDirective extends Directive {
       case 8:
       case 7:
       case 6:
+        return [
+          {
+            creepType: 'drone',
+            creepCount: 4,
+            creepSize: 'heavy',
+          },
+        ];
       case 5:
       case 4:
       case 3:

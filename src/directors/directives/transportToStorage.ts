@@ -1,5 +1,10 @@
 import { TaskType } from 'tasks/task';
-import { CreepConfig, Directive, DirectiveAction, DirectiveResponse } from './directive';
+import {
+  CreepConfig,
+  Directive,
+  DirectiveAction,
+  DirectiveResponse
+} from './directive';
 
 export class TransportToStorageDirective extends Directive {
   protected directiveKey = 'transportToStorage';
@@ -46,6 +51,20 @@ export class TransportToStorageDirective extends Directive {
         structure.pos.findInRange(FIND_SOURCES, 2).length > 0,
     });
 
+    this.roomDirector.memory.expansionRooms.forEach((er) => {
+      const room = Game.rooms[er.roomName];
+
+      if (room) {
+        energyContainers.push(
+          ...room.find<FIND_STRUCTURES, StructureContainer>(FIND_STRUCTURES, {
+            filter: (structure) =>
+              structure.structureType === STRUCTURE_CONTAINER &&
+              structure.pos.findInRange(FIND_SOURCES, 2).length > 0,
+          })
+        );
+      }
+    });
+
     const mineralContainers = this.roomDirector.room.find<
       FIND_STRUCTURES,
       StructureContainer
@@ -66,6 +85,7 @@ export class TransportToStorageDirective extends Directive {
           totalCreeps: 1,
           targetId: container.id,
           subTargetId: storage.id,
+          targetRoom: container.room.name,
           creeps: {
             'transport:default': {
               creepCount: 1,

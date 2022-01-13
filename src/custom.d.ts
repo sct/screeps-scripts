@@ -20,6 +20,7 @@ interface RoomPosition {
   getMultiRoomRangeTo(pos: RoomPosition): number;
   roomCoords(): Coord;
   room(): Room;
+  around(): Coord[];
 }
 
 interface ConstructionSite {

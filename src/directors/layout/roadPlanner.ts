@@ -65,10 +65,23 @@ export class RoadPlanner {
     );
     this.destinations.push(...localSources);
 
+    // Local controller
+    if (this.roomDirector.room.controller) {
+      this.destinations.push(this.roomDirector.room.controller.pos);
+    }
+
     const remoteSources = this.roomDirector.memory.remoteSources
       .map((rs) => new RoomPosition(rs.x, rs.y, rs.room))
       .slice(0, 4);
     this.destinations.push(...remoteSources);
+
+    // Remote controllers
+    this.roomDirector.memory.expansionRooms.forEach((r) => {
+      const room = Game.rooms[r.roomName];
+      if (room && room.controller) {
+        this.destinations.push(room.controller.pos);
+      }
+    });
   }
 
   public get memory(): RoadPlannerMemory {
@@ -239,7 +252,7 @@ export class RoadPlanner {
   public run(): void {
     const storage = this.roomDirector.room.storage;
     if (storage) {
-      if (Game.time % 100 === 0) {
+      if (Game.time % 3000 === 0) {
         log.debug('Recalculating road network', { label: 'Road Planner' });
         this.recalculateRoadNetwork(storage.pos);
 

@@ -325,6 +325,47 @@ export class RoomDirector {
         });
       }
     }
+
+    // Build containers near sources
+    const sourcePositions: RoomPosition[] = [];
+    sourcePositions.push(...this.room.find(FIND_SOURCES).map((s) => s.pos));
+
+    // get expansion room sources
+    this.memory.remoteSources.slice(0, 4).forEach((s) => {
+      sourcePositions.push(new RoomPosition(s.x, s.y, s.room));
+    });
+
+    sourcePositions.forEach((sourcePosition) => {
+      const room = sourcePosition.room();
+
+      if (room) {
+        const structures = room.lookAtArea(
+          sourcePosition.y - 1,
+          sourcePosition.x - 1,
+          sourcePosition.y + 1,
+          sourcePosition.x + 1,
+          true
+        );
+
+        if (
+          !structures.some(
+            (s) =>
+              s.structure instanceof StructureContainer ||
+              s.constructionSite?.structureType === STRUCTURE_CONTAINER
+          )
+        ) {
+          let startedConstruction = false;
+          sourcePosition.around().forEach(({ x, y }) => {
+            if (
+              !startedConstruction &&
+              room.createConstructionSite(x, y, STRUCTURE_CONTAINER) === OK
+            ) {
+              startedConstruction = true;
+            }
+          });
+        }
+      }
+    });
   }
 
   public getAvailableStoredEnergy(): number {

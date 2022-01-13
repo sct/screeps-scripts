@@ -16,13 +16,6 @@ export class HarvestTask extends Task<Source> {
 
   public transferToStorage(preferStorage = false): void {
     const isMining = this.kouhai.memory.activeTask?.taskKey.startsWith('mine');
-    if (this.kouhai.memory.room !== this.kouhai.creep.room.name) {
-      this.kouhai.creep.travelTo(
-        new RoomPosition(25, 25, this.kouhai.memory.room),
-        { range: 23 }
-      );
-      return;
-    }
     const closestSpawn = this.kouhai.creep.pos.findClosestByPath(
       FIND_STRUCTURES,
       {
@@ -48,6 +41,14 @@ export class HarvestTask extends Task<Source> {
               structure.pos.findInRange(FIND_MINERALS, 3).length === 0,
       }
     );
+
+    if (!closestStorage && this.kouhai.memory.room !== this.kouhai.creep.room.name) {
+      this.kouhai.creep.travelTo(
+        new RoomPosition(25, 25, this.kouhai.memory.room),
+        { range: 23 }
+      );
+      return;
+    }
 
     const tryFirst = preferStorage ? closestStorage : closestSpawn;
     const trySecond = preferStorage ? closestSpawn : closestStorage;
@@ -103,14 +104,10 @@ export class HarvestTask extends Task<Source> {
         .map((creep) => new Kouhai(creep))
         .some(
           (kouhai) =>
-            kouhai.creep.room.name === this.kouhai.creep.room.name &&
             kouhai.activeTask?.taskType === TaskType.Transport &&
             kouhai.activeTask?.taskKey.startsWith('transportToStorage')
         );
-      const preferStorage =
-        (this.kouhai.creep.room.controller?.level ?? 0) >= 4 &&
-        !!containersInRange?.[0] &&
-        transportersAvailable;
+      const preferStorage = !!containersInRange?.[0] && transportersAvailable;
 
       this.transferToStorage(preferStorage);
     } else {
